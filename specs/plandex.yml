@@ -1,5 +1,5 @@
 # spec for building the plandex server
-repository: https://github.com/plandex-ai/plandex
+repository: plandex-ai/plandex
 ref: "server/v2.2.1"
 builds:
   - name: plandex-server

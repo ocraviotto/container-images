@@ -1,5 +1,5 @@
 # spec for building images from the ente repository
-repository: https://github.com/ente-io/ente
+repository: ente-io/ente
 ref: main
 builds:
   - name: ente-server
