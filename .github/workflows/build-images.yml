@@ -167,7 +167,7 @@ jobs:
           push: ${{ needs.images-to-build.outputs.should_push == 'true' }}
           platforms: ${{ matrix.platforms }}
           tags: ${{ matrix.image_tags }}
-          build-args: ${{ matrix.build_args || '' }}
+          build-args: ${{ matrix.build_args }}
 
       - name: Sign the images with GitHub OIDC Token
         if: needs.images-to-build.outputs.should_push == 'true'
