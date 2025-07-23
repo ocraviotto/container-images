@@ -166,7 +166,7 @@ jobs:
           file: ${{ matrix.dockerfile_path }}
           push: ${{ needs.images-to-build.outputs.should_push == 'true' }}
           platforms: ${{ matrix.platforms }}
-          tags: ${{ matrix.image_tags }}
+          tags: ${{ join(matrix.image_tags, ',') }}
           build-args: ${{ matrix.build_args }}
 
       - name: Sign the images with GitHub OIDC Token
