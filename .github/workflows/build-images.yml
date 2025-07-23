@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REPO_PREFIX: ocraviotto/container-images
+  IMAGE_REPO_PREFIX: ${{ github.repository }}
 
 jobs:
   # Job to define images to build
@@ -113,7 +113,7 @@ jobs:
           done
 
           echo "Generated Matrix: $MATRIX_JSON"
-          COMPACT=$(jq -c . <<< "$MATRIX_JSON")
+          COMPACT=$(jq -c '{include: .}' <<< "$MATRIX_JSON")
           echo "matrix=$COMPACT" >> "$GITHUB_OUTPUT"
 
   # Job to perform the actual builds based on the matrix generated above
