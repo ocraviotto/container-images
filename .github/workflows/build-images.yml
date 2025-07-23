@@ -113,7 +113,8 @@ jobs:
           done
 
           echo "Generated Matrix: $MATRIX_JSON"
-          echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
+          COMPACT=$(jq -c . <<< "$MATRIX_JSON")
+          echo "matrix=$COMPACT" >> "$GITHUB_OUTPUT"
 
   # Job to perform the actual builds based on the matrix generated above
   build-and-push:
