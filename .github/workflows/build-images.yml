@@ -68,8 +68,8 @@ jobs:
                 repo_url: $spec.repository,
                 repo_ref: (.ref // $spec.ref),
                 image_name: .name,
-                build_context: ("external_repo/" + .name + "/" + .context),
-                dockerfile_path: .dockerfile,
+                build_context: ($ENV.GITHUB_WORKSPACE + "/external_repo/" + .name + "/" + .context),
+                dockerfile_path: (.dockerfile // "Dockerfile"),
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
                 image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
                 build_args: ($build.buildArgs // [])
@@ -79,7 +79,7 @@ jobs:
           # --- Process local images from images/ ---
           GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
 
-          for FILE in images/*/*file; do
+          for FILE in ${GITHUB_WORKSPACE}/images/*/*file; do
             echo "Processing ${FILE}..."
             IMAGE_DIR=$(dirname "$FILE")
             FILE_NAME=$(basename "$FILE")
@@ -99,13 +99,7 @@ jobs:
             BUILD_CONTEXT="${IMAGE_DIR}"
             DOCKERFILE_PATH="${CONTAINERFILE}"
 
-            TAGS_ARRAY=$(jq -n \
-              --arg prefix "${IMAGE_REPO_PREFIX}/${IMAGE_NAME}:" \
-              --arg tags "$GIT_TAG,latest" \
-              '$tags | split(",") | map($prefix + .)'\
-            )
-
-            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH TAGS_ARRAY
+            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH GIT_TAG
 
             BUILD_JSON=$(jq -n \
               '{
@@ -114,7 +108,7 @@ jobs:
                 build_context: $ENV.BUILD_CONTEXT,
                 dockerfile_path: $ENV.DOCKERFILE_PATH,
                 platforms: "linux/amd64,linux/arm64",
-                image_tags: $ENV.TAGS_ARRAY
+                image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .))
               }' \
             )
             MATRIX_JSON=$(jq --argjson build "$BUILD_JSON" '. + [$build]' <<< "$MATRIX_JSON")
