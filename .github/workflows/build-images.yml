@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REPO_PREFIX: ${{ github.repository }}
+  IMAGE_REPO_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
   # Job to define images to build
@@ -21,8 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read # For actions/checkout
-      packages: write # For pushing images to GHCR
-      id-token: write # For Sigstore/Cosign for OIDC
 
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
@@ -187,6 +185,7 @@ jobs:
         env:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ join(matrix.image_tags, ' ') }}
+          REPO_PREFIX: ${{ github.repository }}
         run: |
           images=""
           for tag in ${TAGS}; do
@@ -194,5 +193,5 @@ jobs:
           done
           cosign verify ${images} \
           --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-          --certificate-identity-regexp="https://github.com/${IMAGE_REPO_PREFIX}" \
+          --certificate-identity-regexp="https://github.com/${REPO_PREFIX}" \
           -o text
