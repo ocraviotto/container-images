@@ -72,7 +72,7 @@ jobs:
                 dockerfile_path: .dockerfile,
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
                 image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
-                build_args: ($build.buildArgs // [])
+                build_args: (($build.buildArgs // "") | if . == "" then [] else split(",") end)
               }' <(yq '.' "$SPEC_FILE"))
           done
 
@@ -175,7 +175,7 @@ jobs:
           push: ${{ needs.images-to-build.outputs.should_push == 'true' }}
           platforms: ${{ matrix.platforms }}
           tags: ${{ join(matrix.image_tags, ',') }}
-          build-args: ${{ matrix.build_args }}
+          build-args: ${{ matrix.build_args && join(matrix.build_args, '\n') || '' }}
 
       - name: Sign the images with GitHub OIDC Token
         if: needs.images-to-build.outputs.should_push == 'true'
