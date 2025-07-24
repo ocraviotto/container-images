@@ -4,5 +4,5 @@ ref: "server/v2.2.1"
 builds:
   - name: plandex-server
     context: app/
-    dockerfile: server/Dockerfile
+    dockerfile: app/server/Dockerfile
     imageTags: v2.2.1
