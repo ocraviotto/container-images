@@ -72,7 +72,7 @@ jobs:
                 dockerfile_path: .dockerfile,
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
                 image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
-                build_args: (($build.buildArgs // "") | if . == "" then [] else split(",") end)
+                build_args: ($build.buildArgs // [])
               }' <(yq '.' "$SPEC_FILE"))
           done
 
