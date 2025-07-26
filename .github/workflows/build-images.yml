@@ -36,8 +36,8 @@ jobs:
 
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      should_build: ${{ steps.generate-matrix.outputs.should_build }}
       should_push: ${{ steps.set.outputs.should_push }}
-      should_build: ${{ steps.set.outputs.should_build }}
 
     steps:
       - name: Set whether we should trigger docker push (and cosign)
