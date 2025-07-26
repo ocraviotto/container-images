@@ -72,7 +72,6 @@ jobs:
           PARENT_COUNT=$(echo $PARENTS | wc -w)
           # --diff-filter=ACDMRT: includes Added, Copied, Deleted, Modified, Renamed, and Type-changed files.
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git fetch origin main
             CHANGED_FILES=$(git diff --name-only --diff-filter=ACDMRT origin/main...HEAD)
           elif [[ "$PARENT_COUNT" -eq 2 ]]; then
             # Single parent: squash merge or direct commit
