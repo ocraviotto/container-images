@@ -10,10 +10,22 @@ on:
     branches:
       - main
   workflow_dispatch:
-
+    inputs:
+      force_builds:
+        description: "Used to force building all specs and images"
+        required: false
+        type: boolean
+        default: false
+      force_push:
+        description: "Used to force pushing. Requires to set force_builds to true if no image would otherwise build"
+        required: false
+        type: boolean
+        default: false
 env:
   REGISTRY: ghcr.io
   IMAGE_REPO_PREFIX: ghcr.io/${{ github.repository }}
+  FORCE_BUILDS: "${{ inputs.force_builds || false }}"
+  FORCE_PUSH: "${{ inputs.force_push || false }}"
 
 jobs:
   # Job to define images to build
@@ -25,18 +37,25 @@ jobs:
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
       should_push: ${{ steps.set.outputs.should_push }}
+      should_build: ${{ steps.set.outputs.should_build }}
 
     steps:
-      - id: set
+      - name: Set whether we should trigger docker push (and cosign)
+        id: set
         run: |
+          #!/usr/bin/env bash
+          set -eo pipefail
+
           echo "GITHUB_REF=$GITHUB_REF"
-          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == refs/tags/v* ]]; then
+          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == refs/tags/v* || "${FORCE_PUSH}" == "true" ]]; then
             echo "should_push=true" >> $GITHUB_OUTPUT
           else
             echo "should_push=false" >> $GITHUB_OUTPUT
           fi
       - name: Checkout current repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed to fetch full history for git diff
 
       - name: Install yq and jq
         run: |
@@ -49,11 +68,54 @@ jobs:
           #!/usr/bin/env bash
           set -eo pipefail
 
+          PARENTS=$(git rev-list --parents -n 1 HEAD)
+          PARENT_COUNT=$(echo $PARENTS | wc -w)
+          # --diff-filter=ACDMRT: includes Added, Copied, Deleted, Modified, Renamed, and Type-changed files.
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin main
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACDMRT origin/main...HEAD)
+          elif [[ "$PARENT_COUNT" -eq 2 ]]; then
+            # Single parent: squash merge or direct commit
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACDMRT HEAD^ HEAD)
+          elif [[ "$PARENT_COUNT" -eq 3 ]]; then
+            # Two parents: true merge commit
+            BASE=$(git merge-base HEAD^1 HEAD^2)
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACDMRT "$BASE" HEAD)
+          else
+            echo "Unexpected number of parents in HEAD: $PARENT_COUNT"
+          fi
+
+          # Use git diff to get a list of changed files.
+          # --diff-filter=ACDMRT: includes Added, Copied, Deleted, Modified, Renamed, and Type-changed files.
+          # The output is a newline-separated list of filenames.
+          # CHANGED_FILES=$(git diff --name-only --diff-filter=ACDMRT $BASE_SHA $HEAD_SHA)
+          echo "Changed Files to process: $CHANGED_FILES"
+
+          # Decide if we should build images
+          if [[ -z "${CHANGED_FILES}" && "${FORCE_BUILDS}" == "false" ]]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            if [[ "${FORCE_BUILDS}" == "false" ]]; then
+              # Set specs - specs are only y*ml and right under 'specs/'
+              CHANGED_SPECS=$(echo "$CHANGED_FILES" | grep -E '^specs/[^/]*\.(yml|yaml)$' || true)
+              # Set local builds - any file changed under 'images/' will collect the image dir, always right under 'images/'
+              CHANGED_IMAGES=$(echo "$CHANGED_FILES" | dirname $(grep -E '^images/.*') 2>/dev/null || true | uniq)
+            else
+              # Set specs - specs are all of the y*ml right under 'specs/' - As an array
+              CHANGED_SPECS=(specs/*.y*ml)
+              # Set local builds - all directories under 'images/' - As an array
+              CHANGED_IMAGES=(images/*)
+            fi
+          fi
+
           # Initialize an empty JSON array
           MATRIX_JSON="[]"
 
           # --- Process external images from specs/ ---
-          for SPEC_FILE in specs/*.y*ml; do
+          # Filter changed specs
+
+          for SPEC_FILE in ${CHANGED_SPECS[@]}; do
             echo "Processing external spec: $SPEC_FILE..."
             # Convert YAML to JSON and read values using jq
             while IFS= read -r build_json; do
@@ -77,20 +139,20 @@ jobs:
           # --- Process local images from images/ ---
           GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
 
-          for FILE in ./images/*/*file; do
-            echo "Processing ${FILE}..."
-            IMAGE_DIR=$(dirname "$FILE")
-            FILE_NAME=$(basename "$FILE")
-            case $FILE_NAME in
-              Containerfile | Dockerfile)
-                echo "Found match: $FILE_NAME"
-                CONTAINERFILE="${FILE_NAME}"
-                ;;
-              *)
-                echo "Not recognizable: $FILE. Skipping"
-                continue
-                ;;
-            esac
+          for DIR in ${CHANGED_IMAGES[@]}; do
+            echo "Processing ${DIR}..."
+            IMAGE_DIR="${DIR}"
+            # Only build local for dirs with Docker|Containerfile
+            if [[ -f "${DIR}/Dockerfile" ]]; then
+              FILE="${DIR}/Dockerfile"
+              echo "Found match: $FILE"
+            elif [[ -f "${DIR}/Containerfile" ]]; then
+              FILE="${DIR}/Containerfile"
+              echo "Found match: $FILE"
+            else
+              echo "Found no Containerfile or Dockerfile. Skipping ${DIR}"
+              continue
+            fi
 
             IMAGE_NAME=$(basename "$IMAGE_DIR")
             BUILD_CONTEXT="${IMAGE_DIR}"
@@ -118,6 +180,7 @@ jobs:
   # Job to perform the actual builds based on the matrix generated above
   build-and-push:
     needs: images-to-build
+    if: needs.images-to-build.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read # For actions/checkout
