@@ -1,0 +1,22 @@
+# EditorConfig https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Universal settings for all files
+[*]
+charset = utf-8
+indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[{Dockerfile,Containerfile,*.dockerfile,*.containerfile}]
+indent_size = 4
+
+[*.{md,markdown}]
+indent_size = 2
+# Preserve trailing whitespace in markdown for line breaks (two spaces = <br>)
+trim_trailing_whitespace = false
+max_line_length = 80

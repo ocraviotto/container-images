@@ -1,0 +1,65 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update packages in Dockerfile ARGs with comment",
+      "managerFilePatterns": ["images/**/Dockerfile"],
+      "matchStrings": [
+        "# renovate:(?: packageName=(?<packageName>\\S+?))(?: depName=(?<depName>\\S+?))?(?: datasource=(?<datasource>\\S+))?(?: versioning=(?<versioning>[a-z-]+?))?\\nARG\\s\\S+_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update ente-server commit hash from API",
+      "managerFilePatterns": ["/^specs/ente.yml$/"],
+      "matchStrings": [
+        "ref: (?<currentValue>[a-f0-9]{40})",
+        "GIT_COMMIT=(?<currentValue>[a-f0-9]{40})"
+      ],
+      "depNameTemplate": "ente-server-commit",
+      "versioningTemplate": "git",
+      "datasourceTemplate": "custom.enteServer"
+    },
+    {
+      "customType": "regex",
+      "description": "Update plandex-server version",
+      "managerFilePatterns": ["/^specs/plandex.yml$/"],
+      "matchStrings": [
+        "ref: \"server/(?<currentValue>v\\d+\\.\\d+\\.\\d+)\"",
+        "imageTags: (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "plandex-ai/plandex",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^server/(?<version>.*)$",
+      "versioningTemplate": "loose"
+    }
+  ],
+  "customDatasources": {
+    "enteServer": {
+      "defaultRegistryUrlTemplate": "https://api.ente.io/ping",
+      "format": "json",
+      "transformTemplates": ["{\"releases\":[{\"version\": id}]}"]
+    }
+  },
+  "packageRules": [
+    {
+      "matchFileNames": [".github/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "Github Actions Dependencies (non-major)"
+    },
+    {
+      "matchFileNames": [
+        "images/**",
+        "specs/**"
+      ],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "Build Updates (non-major)"
+    }
+  ]
+}
