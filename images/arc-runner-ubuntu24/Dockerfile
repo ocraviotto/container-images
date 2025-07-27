@@ -1,4 +1,4 @@
-#See https://github.com/actions/runner/blob/main/.github/workflows/publish-image.yml
+#See https://github.com/actions/runner/blob/main/.github/workflows/release.yml
 # and https://github.com/actions/runner/blob/main/images/Dockerfile
 
 # Source: https://github.com/dotnet/dotnet-docker - This changes to Ubuntu 24.04 instead of (22.04) jammy
@@ -7,9 +7,13 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-noble as build
 ARG TARGETOS
 ARG TARGETARCH
 # https://github.com/actions/runner/blob/main/src/runnerversion
+# renovate: packageName=actions/runner
 ARG RUNNER_VERSION=2.327.0
+# renovate: packageName=actions/runner-container-hooks
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+# renovate: packageName=docker/cli datasource=github-tags
 ARG DOCKER_VERSION=28.3.2
+# renovate: packageName=docker/buildx
 ARG BUILDX_VERSION=0.26.1
 
 RUN apt update -y && apt install curl unzip -y
