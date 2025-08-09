@@ -19,14 +19,14 @@
       "description": "Update ente-server commit hash from API",
       "managerFilePatterns": ["/^specs/ente.yml$/"],
       "matchStrings": [
-        "ref: (?<currentDigest>[a-f0-9]{40})",
-        "GIT_COMMIT=(?<currentDigest>[a-f0-9]{40})"
+        "(?<originalKey>ref: )(?<currentDigest>[a-f0-9]{40})",
+        "(?<originalKey>GIT_COMMIT=)(?<currentDigest>[a-f0-9]{40})"
       ],
       "depNameTemplate": "ente-server-commit",
       "versioningTemplate": "loose",
       "datasourceTemplate": "custom.enteServer",
       "currentValueTemplate": "0.0.0",
-      "autoReplaceStringTemplate": "{{{ newDigest }}}"
+      "autoReplaceStringTemplate": "{{{ originalKey }}}{{{ newDigest }}}"
     },
     {
       "customType": "regex",
