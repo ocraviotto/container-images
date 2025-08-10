@@ -167,7 +167,7 @@ jobs:
                 build_context: $ENV.BUILD_CONTEXT,
                 dockerfile_path: $ENV.DOCKERFILE_PATH,
                 platforms: "linux/amd64,linux/arm64",
-                image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .))
+                image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME)
               }' \
             )
