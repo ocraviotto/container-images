@@ -16,17 +16,29 @@
     },
     {
       "customType": "regex",
-      "description": "Update ente-server commit hash from API",
+      "description": "Update ente-server commit hash from API for ref",
       "managerFilePatterns": ["/^specs/ente.yml$/"],
       "matchStrings": [
-        "(?<originalKey>ref: )(?<currentDigest>[a-f0-9]{40})",
-        "(?<originalKey>GIT_COMMIT=)(?<currentDigest>[a-f0-9]{40})"
+        "ref:\\s*(?<currentDigest>[a-f0-9]{40}) # ente-commit"
       ],
       "depNameTemplate": "ente-server-commit",
       "versioningTemplate": "loose",
       "datasourceTemplate": "custom.enteServer",
       "currentValueTemplate": "0.0.0",
-      "autoReplaceStringTemplate": "{{{ originalKey }}}{{{ newDigest }}}"
+      "autoReplaceStringTemplate": "ref: {{{ newDigest }}} # ente-commit"
+    },
+    {
+      "customType": "regex",
+      "description": "Update ente-server commit hash from API for args",
+      "managerFilePatterns": ["/^specs/ente.yml$/"],
+      "matchStrings": [
+        "- GIT_COMMIT=(?<currentDigest>[a-f0-9]{40})"
+      ],
+      "depNameTemplate": "ente-server-args",
+      "versioningTemplate": "loose",
+      "datasourceTemplate": "custom.enteServer",
+      "currentValueTemplate": "0.0.0",
+      "autoReplaceStringTemplate": "- GIT_COMMIT={{{ newDigest }}}"
     },
     {
       "customType": "regex",
@@ -54,6 +66,11 @@
       "matchFileNames": [".github/**"],
       "matchUpdateTypes": ["patch", "minor"],
       "groupName": "Github Actions Dependencies (non-major)"
+    },
+    {
+      "matchFileNames": ["/^specs/ente.yml$/"],
+      "matchUpdateTypes": ["patch", "minor", "digest"],
+      "groupName": "Ente (automatic)"
     },
     {
       "matchFileNames": [
