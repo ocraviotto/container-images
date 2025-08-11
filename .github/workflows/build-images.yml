@@ -99,7 +99,7 @@ jobs:
               # Set specs - specs are only y*ml and right under 'specs/'
               CHANGED_SPECS=$(echo "$CHANGED_FILES" | grep -E '^specs/[^/]*\.(yml|yaml)$' || true)
               # Set local builds - any file changed under 'images/' will collect the image dir, always right under 'images/'
-              CHANGED_IMAGES=$(echo "$CHANGED_FILES" | dirname $(grep -E '^images/.*') 2>/dev/null || true | uniq)
+              CHANGED_IMAGES=$(echo "$CHANGED_FILES" | grep -E '^images/' || true | while read -r line; do dirname "$line"; done | uniq)
             else
               # Set specs - specs are all of the y*ml right under 'specs/' - As an array
               CHANGED_SPECS=(specs/*.y*ml)
@@ -182,7 +182,7 @@ jobs:
   # Job to perform the actual builds based on the matrix generated above
   build-and-push:
     needs: images-to-build
-    if: needs.images-to-build.outputs.should_build == 'true' && toJson(fromJson(needs.images-to-build.outputs.matrix)) != '[]'
+    if: needs.images-to-build.outputs.should_build == 'true' && toJson(fromJson(needs.images-to-build.outputs.matrix).include) != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read # For actions/checkout
