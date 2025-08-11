@@ -224,7 +224,7 @@ jobs:
 
       - name: Process metadata for the image
         id: meta
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         with:
           context: git
           tags: |
