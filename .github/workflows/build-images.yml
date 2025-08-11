@@ -182,7 +182,7 @@ jobs:
   # Job to perform the actual builds based on the matrix generated above
   build-and-push:
     needs: images-to-build
-    if: needs.images-to-build.outputs.should_build == 'true' && needs.images-to-build.outputs.matrix != '[]'
+    if: needs.images-to-build.outputs.should_build == 'true' && toJson(fromJson(needs.images-to-build.outputs.matrix)) != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read # For actions/checkout
