@@ -131,6 +131,7 @@ jobs:
                 dockerfile_path: ($build.dockerfile // "Dockerfile"),
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
                 image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
+                version: (.imageTags // (.ref // $spec.ref)) | split(",") | .[0],
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $build.name),
                 build_args: ($build.buildArgs // [])
               }' <(yq '.' "$SPEC_FILE"))
@@ -163,12 +164,14 @@ jobs:
             BUILD_JSON=$(jq -n \
               '{
                 build_type: "local",
+                repo_url: "${{ github.server_url }}/${{ github.repository }}",
                 repo_ref: "${{ endsWith( '/merge', github.ref_name ) && github.head_ref || github.ref_name }}",
                 image_name: $ENV.IMAGE_NAME,
                 build_context: $ENV.BUILD_CONTEXT,
                 dockerfile_path: $ENV.DOCKERFILE_PATH,
                 platforms: "linux/amd64,linux/arm64",
                 image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
+                version: $ENV.GIT_TAG,
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME)
               }' \
             )
@@ -198,6 +201,7 @@ jobs:
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Checkout external repository (${{ matrix.repo_url }})
+        id: external-checkout
         if: matrix.build_type == 'external'
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
@@ -223,15 +227,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Process metadata for the image
+      - name: Process metadata for image ${{ matrix.image }}
         id: meta
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         with:
-          context: git
           tags: |
             type=raw,priority=100,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=raw,priority=900,value=${{ matrix.repo_ref }}
-            type=sha,enable=${{ matrix.build_type != 'external' }},priority=800,prefix=,suffix=,format=long
           # type=schedule
           # # branch event
           # type=ref,enable=${{ matrix.build_type != 'external' }},priority=600,prefix=,suffix=,event=branch
@@ -241,6 +243,16 @@ jobs:
           # type=ref,enable=${{ matrix.build_type != 'external' }},priority=600,prefix=pr-,suffix=,event=pr
           images: |
             ${{ matrix.image }}
+          labels: |
+            org.opencontainers.image.revision=${{ matrix.build_type == 'external' && steps.external-checkout.outputs.commit || github.sha }}
+            org.opencontainers.image.url=${{ format('{0}/{1}', github.server_url, matrix.repo_url) }}
+            org.opencontainers.image.title=${{ matrix.image_name }}
+            org.opencontainers.image.version=${{ matrix.version }}
+          annotations: |
+            manifest:org.opencontainers.image.revision=${{ matrix.build_type == 'external' && steps.external-checkout.outputs.commit || github.sha }}
+            manifest:org.opencontainers.image.url=${{ format('{0}/{1}', github.server_url, matrix.repo_url) }}
+            manifest:org.opencontainers.image.title=${{ matrix.image_name }}
+            manifest:org.opencontainers.image.version=${{ matrix.version }}
 
       - name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -253,6 +265,7 @@ jobs:
           tags: ${{ join(matrix.image_tags, ',') }}
           build-args: ${{ matrix.build_args && join(matrix.build_args, '\n') || '' }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
 
       - name: Sign the images with GitHub OIDC Token
         if: needs.images-to-build.outputs.should_push == 'true'
