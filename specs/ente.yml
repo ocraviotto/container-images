@@ -6,9 +6,9 @@ builds:
     context: server
     dockerfile: server/Dockerfile
     # curl -s https://api.ente.io/ping | jq '.id'
-    ref: f1a1d8f873ebf317d7bc04c2290e0d9c0868ba3d # ente-commit
+    ref: fe8da0b332c5b9fef761e2f5e29d0bd1e39cfe03 # ente-commit
     buildArgs:
-      - GIT_COMMIT=f1a1d8f873ebf317d7bc04c2290e0d9c0868ba3d
+      - GIT_COMMIT=fe8da0b332c5b9fef761e2f5e29d0bd1e39cfe03
   - name: ente-web
     context: web
     dockerfile: web/Dockerfile
