@@ -137,7 +137,7 @@ jobs:
                   map(if . == "DATE" then $ENV.DATE_VER else . end) |
                   map(if . == "REF" then ($build.ref // $spec.ref) else . end) |
                   map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
-                version: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") |
+                version: ((.imageTags // (.ref // $spec.ref)) | split(",") |
                   map(if . == "DATE" then $ENV.DATE_VER else . end) |
                   map(if . == "REF" then ($build.ref // $spec.ref) else . end) |
                   .[0]),
@@ -164,11 +164,21 @@ jobs:
               continue
             fi
 
+            if [[ -f "${DIR}/.version" ]]; then
+              VERSION_LINE=$(<"${DIR}/.version")
+              VERSION="${VERSION_LINE//*=}"
+            fi
+            if [[ -n $VERSION ]]; then
+              GIT_TAGS="${VERSION},${GIT_TAG},latest"
+            else
+              GIT_TAGS="${GIT_TAG},latest"
+            fi
+
             IMAGE_NAME=$(basename "$IMAGE_DIR")
             BUILD_CONTEXT="${IMAGE_DIR}"
             DOCKERFILE_PATH="${FILE}"
 
-            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH GIT_TAG
+            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH GIT_TAGS
 
             BUILD_JSON=$(jq -n \
               '{
@@ -179,8 +189,8 @@ jobs:
                 build_context: $ENV.BUILD_CONTEXT,
                 dockerfile_path: $ENV.DOCKERFILE_PATH,
                 platforms: "linux/amd64,linux/arm64",
-                image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
-                version: $ENV.GIT_TAG,
+                image_tags: ($ENV.GIT_TAGS | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
+                version: ($ENV.GIT_TAGS | split(",") | .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME)
               }' \
             )
