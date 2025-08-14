@@ -114,6 +114,9 @@ jobs:
           # --- Process external images from specs/ ---
           # Filter changed specs
 
+          DATE_VER="0.0.$(date +%Y%m%d)-${{ github.run_attempt }}"
+          export DATE_VER
+
           for SPEC_FILE in ${CHANGED_SPECS[@]}; do
             echo "Processing external spec: $SPEC_FILE..."
             # Convert YAML to JSON and read values using jq
@@ -130,15 +133,21 @@ jobs:
                 build_context: ($build.context // "" ),
                 dockerfile_path: ($build.dockerfile // "Dockerfile"),
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
-                image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
-                version: (.imageTags // (.ref // $spec.ref)) | split(",") | .[0],
+                image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") |
+                  map(if . == "DATE" then $ENV.DATE_VER else . end) |
+                  map(if . == "REF" then ($build.ref // $spec.ref) else . end) |
+                  map($ENV.IMAGE_REPO_PREFIX + "/" + $build.name + ":" + .)),
+                version: ((.imageTags // (.ref // $spec.ref)) | split(",") |
+                  map(if . == "DATE" then $ENV.DATE_VER else . end) |
+                  map(if . == "REF" then ($build.ref // $spec.ref) else . end) |
+                  .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $build.name),
                 build_args: ($build.buildArgs // [])
               }' <(yq '.' "$SPEC_FILE"))
           done
 
           # --- Process local images from images/ ---
-          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
+          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || echo $DATE_VER)
 
           for DIR in ${CHANGED_IMAGES[@]}; do
             echo "Processing ${DIR}..."
@@ -155,11 +164,21 @@ jobs:
               continue
             fi
 
+            if [[ -f "${DIR}/.version" ]]; then
+              VERSION_LINE=$(<"${DIR}/.version")
+              VERSION="${VERSION_LINE//*=}"
+            fi
+            if [[ -n $VERSION ]]; then
+              GIT_TAGS="${VERSION},${GIT_TAG},latest"
+            else
+              GIT_TAGS="${GIT_TAG},latest"
+            fi
+
             IMAGE_NAME=$(basename "$IMAGE_DIR")
             BUILD_CONTEXT="${IMAGE_DIR}"
             DOCKERFILE_PATH="${FILE}"
 
-            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH GIT_TAG
+            export IMAGE_NAME BUILD_CONTEXT DOCKERFILE_PATH GIT_TAGS
 
             BUILD_JSON=$(jq -n \
               '{
@@ -170,8 +189,8 @@ jobs:
                 build_context: $ENV.BUILD_CONTEXT,
                 dockerfile_path: $ENV.DOCKERFILE_PATH,
                 platforms: "linux/amd64,linux/arm64",
-                image_tags: ($ENV.GIT_TAG + ",latest" | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
-                version: $ENV.GIT_TAG,
+                image_tags: ($ENV.GIT_TAGS | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
+                version: ($ENV.GIT_TAGS | split(",") | .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME)
               }' \
             )
