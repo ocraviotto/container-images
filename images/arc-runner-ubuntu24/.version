@@ -1,0 +1,2 @@
+# renovate: datasource=github-releases depName=arc-runner packageName=actions/runner
+RUNNER_VERSION=2.327.1
