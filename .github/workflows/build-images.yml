@@ -114,7 +114,7 @@ jobs:
           # --- Process external images from specs/ ---
           # Filter changed specs
 
-          DATE_VER="0.0.$(date +%Y%m%d)-${{ github.run_attempt }}"
+          DATE_VER="0.0.$(date +%Y%m%d)-${{ github.run_number }}.${{ github.run_attempt }}"
           export DATE_VER
 
           for SPEC_FILE in ${CHANGED_SPECS[@]}; do
