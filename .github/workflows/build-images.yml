@@ -268,10 +268,10 @@ jobs:
             org.opencontainers.image.title=${{ matrix.image_name }}
             org.opencontainers.image.version=${{ matrix.version }}
           annotations: |
-            manifest:org.opencontainers.image.revision=${{ matrix.build_type == 'external' && steps.external-checkout.outputs.commit || github.sha }}
-            manifest:org.opencontainers.image.url=${{ format('{0}/{1}', github.server_url, matrix.repo_url) }}
-            manifest:org.opencontainers.image.title=${{ matrix.image_name }}
-            manifest:org.opencontainers.image.version=${{ matrix.version }}
+            org.opencontainers.image.revision=${{ matrix.build_type == 'external' && steps.external-checkout.outputs.commit || github.sha }}
+            org.opencontainers.image.url=${{ format('{0}/{1}', github.server_url, matrix.repo_url) }}
+            org.opencontainers.image.title=${{ matrix.image_name }}
+            org.opencontainers.image.version=${{ matrix.version }}
 
       - name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
