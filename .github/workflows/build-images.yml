@@ -130,7 +130,7 @@ jobs:
                 repo_url: $spec.repository,
                 repo_ref: (.ref // $spec.ref),
                 image_name: .name,
-                build_context: ($build.context // "" ),
+                build_context: ($build.context // "." ),
                 dockerfile_path: ($build.dockerfile // "Dockerfile"),
                 platforms: (.platforms // "linux/amd64,linux/arm64"),
                 image_tags: ((.imageTags // (.ref // $spec.ref)) + ",latest" | split(",") |
