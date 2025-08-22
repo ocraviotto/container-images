@@ -8,7 +8,9 @@
     {
       "customType": "regex",
       "description": "Update packages in Dockerfile ARGs with comment",
-      "managerFilePatterns": ["images/**/Dockerfile"],
+      "managerFilePatterns": [
+        "images/**/Dockerfile"
+      ],
       "matchStrings": [
         "# renovate:(?: packageName=(?<packageName>\\S+?))(?: depName=(?<depName>\\S+?))?(?: datasource=(?<datasource>\\S+))?(?: versioning=(?<versioning>[a-z-]+?))?\\nARG\\s\\S+_VERSION=(?<currentValue>\\S+)"
       ],
@@ -16,8 +18,20 @@
     },
     {
       "customType": "regex",
+      "description": "Update images' .version files",
+      "managerFilePatterns": [
+        "images/**/.version"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.+?)(?: depName=(?<depName>.+?))? packageName=(?<packageName>.+?)(?: versioning=(?<versioning>[a-z-]+?))?\\s.+?_VERSION=(?<currentValue>.+?)\\s"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Update ente-server commit hash from API for ref",
-      "managerFilePatterns": ["/^specs/ente.yml$/"],
+      "managerFilePatterns": [
+        "/^specs/ente.yml$/"
+      ],
       "matchStrings": [
         "ref:\\s*(?<currentDigest>[a-f0-9]{40}) # ente-commit"
       ],
@@ -30,7 +44,9 @@
     {
       "customType": "regex",
       "description": "Update ente-server commit hash from API for args",
-      "managerFilePatterns": ["/^specs/ente.yml$/"],
+      "managerFilePatterns": [
+        "/^specs/ente.yml$/"
+      ],
       "matchStrings": [
         "- GIT_COMMIT=(?<currentDigest>[a-f0-9]{40})"
       ],
@@ -43,7 +59,9 @@
     {
       "customType": "regex",
       "description": "Update plandex-server version",
-      "managerFilePatterns": ["/^specs/plandex.yml$/"],
+      "managerFilePatterns": [
+        "/^specs/plandex.yml$/"
+      ],
       "matchStrings": [
         "ref: \"server/(?<currentValue>v\\d+\\.\\d+\\.\\d+)\"",
         "imageTags: (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
@@ -58,18 +76,31 @@
     "enteServer": {
       "defaultRegistryUrlTemplate": "https://api.ente.io/ping",
       "format": "json",
-      "transformTemplates": ["{\"releases\":[{\"version\": \"0.0.0\", \"digest\": id}]}"]
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": id}]}"
+      ]
     }
   },
   "packageRules": [
     {
-      "matchFileNames": [".github/**"],
-      "matchUpdateTypes": ["patch", "minor"],
+      "matchFileNames": [
+        ".github/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
       "groupName": "Github Actions Dependencies (non-major)"
     },
     {
-      "matchFileNames": ["/^specs/ente.yml$/"],
-      "matchUpdateTypes": ["patch", "minor", "digest"],
+      "matchFileNames": [
+        "/^specs/ente.yml$/"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest"
+      ],
       "groupName": "Ente (automatic)"
     },
     {
@@ -77,7 +108,10 @@
         "images/**",
         "specs/**"
       ],
-      "matchUpdateTypes": ["patch", "minor"],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
       "groupName": "Build Updates (non-major)"
     }
   ]
