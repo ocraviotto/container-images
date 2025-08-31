@@ -3,13 +3,13 @@ repository: ocraviotto/litellm
 ref: fix-gemini-400-when-no-user-msg
 builds:
   - name: litellm
-    imageTags: v1.76.0-oc,REF
+    imageTags: v1.76.1-oc,REF
     platforms: local,linux/amd64,linux/arm64,linux/arm64/v8
   - name: litellm-database
     dockerfile: docker/Dockerfile.database
-    imageTags: v1.76.0-oc,REF
+    imageTags: v1.76.1-oc,REF
     platforms: local,linux/amd64,linux/arm64,linux/arm64/v8
   - name: litellm-non_root
     dockerfile: docker/Dockerfile.non_root
-    imageTags: v1.76.0-oc,REF
+    imageTags: v1.76.1-oc,REF
     platforms: local,linux/amd64,linux/arm64,linux/arm64/v8
