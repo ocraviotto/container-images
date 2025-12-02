@@ -53,7 +53,7 @@ jobs:
             echo "should_push=false" >> $GITHUB_OUTPUT
           fi
       - name: Checkout current repository
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0 # Needed to fetch full history for git diff
 
@@ -217,12 +217,12 @@ jobs:
     steps:
       - name: Checkout current repository
         if: matrix.build_type != 'external'
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Checkout external repository (${{ matrix.repo_url }})
         id: external-checkout
         if: matrix.build_type == 'external'
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: ${{ matrix.repo_url }}
           ref: ${{ matrix.repo_ref }}
