@@ -6,10 +6,10 @@ builds:
     context: server
     dockerfile: server/Dockerfile
     # curl -s https://api.ente.io/ping | jq '.id'
-    ref: db73389649ff17171634abcecf8d1ddf8e49c203 # ente-commit
+    ref: fa30e7c7bf695b1af49b895a72e4de86fb791e09 # ente-commit
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     buildArgs:
-      - GIT_COMMIT=db73389649ff17171634abcecf8d1ddf8e49c203
+      - GIT_COMMIT=fa30e7c7bf695b1af49b895a72e4de86fb791e09
   - name: ente-web
     context: web
     dockerfile: web/Dockerfile
