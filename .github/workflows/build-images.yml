@@ -99,7 +99,7 @@ jobs:
               # Set specs - specs are only y*ml and right under 'specs/'
               CHANGED_SPECS=$(echo "$CHANGED_FILES" | grep -E '^specs/[^/]*\.(yml|yaml)$' || true)
               # Set local builds - any file changed under 'images/' will collect the image dir, always right under 'images/'
-              CHANGED_IMAGES=$(echo "$CHANGED_FILES" | grep -E '^images/' || true | while read -r line; do dirname "$line"; done | uniq)
+              CHANGED_IMAGES=$( (echo "$CHANGED_FILES" | grep -E '^images/' || true) | while read -r line; do dirname "$line"; done | uniq)
             else
               # Set specs - specs are all of the y*ml right under 'specs/' - As an array
               CHANGED_SPECS=(specs/*.y*ml)
