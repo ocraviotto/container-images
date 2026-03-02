@@ -3,7 +3,7 @@
 
 # Source: https://github.com/dotnet/dotnet-docker - This changes to Ubuntu 24.04 instead of (22.04) jammy
 # and downgraded to dotnet 8 from 9 following upstream
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble as build
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble as build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -45,7 +45,7 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
     "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TARGETARCH}" \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RUNNER_MANUALLY_TRAP_SIG=1
