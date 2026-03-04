@@ -9,13 +9,13 @@ ARG TARGETOS
 ARG TARGETARCH
 # https://github.com/actions/runner/blob/main/src/runnerversion
 # renovate: packageName=actions/runner
-ARG RUNNER_VERSION=2.331.0
+ARG RUNNER_VERSION=2.332.0
 # packageName=actions/runner-container-hooks
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 # renovate: packageName=docker/cli datasource=github-tags
 ARG DOCKER_VERSION=29.0.2
 # renovate: packageName=docker/buildx
-ARG BUILDX_VERSION=0.31.1
+ARG BUILDX_VERSION=0.32.0
 
 RUN apt update -y && apt install curl unzip -y
 
