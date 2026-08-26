@@ -9,7 +9,7 @@ ARG TARGETOS
 ARG TARGETARCH
 # https://github.com/actions/runner/blob/main/src/runnerversion
 # renovate: packageName=actions/runner
-ARG RUNNER_VERSION=2.336.0
+ARG RUNNER_VERSION=2.337.0
 # packageName=actions/runner-container-hooks
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 # renovate: packageName=docker/cli datasource=github-tags
