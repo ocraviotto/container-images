@@ -79,6 +79,13 @@
       "transformTemplates": [
         "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": id}]}"
       ]
+    },
+    "crunchyPostgres": {
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/CrunchyData/postgres-operator/main/config/components/images-by-tag/kustomization.yaml",
+      "format": "yaml",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": images[name = \"{{packageName}}\"].newTag}]}"
+      ]
     }
   },
   "packageRules": [
@@ -113,6 +120,12 @@
         "minor"
       ],
       "groupName": "Build Updates (non-major)"
+    },
+    {
+      "matchDatasources": [
+        "custom.crunchyPostgres"
+      ],
+      "versioning": "regex:^(?<compatibility>ubi9-\\d+)\\.(?<minor>\\d+)-(?<build>\\d+)$"
     }
   ]
 }
