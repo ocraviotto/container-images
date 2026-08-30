@@ -21,7 +21,11 @@ RUN apk add --no-cache git
 WORKDIR /app
 RUN git clone --depth 1 --branch ${GPTR_VERSION} https://github.com/assafelovic/gpt-researcher.git .
 WORKDIR /app/frontend/nextjs
-RUN npm install --legacy-peer-deps
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm config set fetch-timeout 600000 \
+    && npm install --legacy-peer-deps
 RUN npm run build
 
 FROM node:18.17.0-alpine AS runner
