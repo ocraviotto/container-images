@@ -1,0 +1,7 @@
+# spec for building the gpt-researcher backend from the upstream repository
+# https://github.com/assafelovic/gpt-researcher
+repository: assafelovic/gpt-researcher
+ref: v3.6.1
+builds:
+  - name: gpt-researcher
+    imageTags: v3.6.1
