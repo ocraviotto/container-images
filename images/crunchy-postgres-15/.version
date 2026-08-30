@@ -1,0 +1,2 @@
+# renovate: datasource=custom.crunchyPostgres packageName=image-crunchy-postgres-15
+PGO_IMAGE_VERSION=ubi9-15.19-2633
