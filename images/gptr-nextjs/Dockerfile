@@ -25,7 +25,9 @@ RUN npm config set fetch-retries 5 \
     && npm config set fetch-retry-mintimeout 20000 \
     && npm config set fetch-retry-maxtimeout 120000 \
     && npm config set fetch-timeout 600000 \
-    && npm install --legacy-peer-deps
+    && (npm install --legacy-peer-deps --no-audit --no-fund \
+        || npm install --legacy-peer-deps --no-audit --no-fund \
+        || npm install --legacy-peer-deps --no-audit --no-fund)
 RUN npm run build
 
 FROM node:18.17.0-alpine AS runner
