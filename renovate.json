@@ -70,6 +70,20 @@
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^server/(?<version>.*)$",
       "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Update gpt-researcher version",
+      "managerFilePatterns": [
+        "/^specs/gpt-researcher.yml$/"
+      ],
+      "matchStrings": [
+        "ref: (?<currentValue>v\\d+\\.\\d+\\.\\d+)",
+        "imageTags: (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "assafelovic/gpt-researcher",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "loose"
     }
   ],
   "customDatasources": {
