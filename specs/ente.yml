@@ -12,6 +12,5 @@ builds:
       - GIT_COMMIT=bb82bd51328c6bd4c47e5d022a960fec25d17019
   - name: ente-web
     dockerfile: web/Dockerfile
-    ref: a0374add988ad4fc5c6dcf11cc083dfe7d746602 # temp fix due to upstream issue
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     clean_runner: true
