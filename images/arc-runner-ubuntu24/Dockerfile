@@ -3,7 +3,7 @@
 
 # Source: https://github.com/dotnet/dotnet-docker - This changes to Ubuntu 24.04 instead of (22.04) jammy
 # and downgraded to dotnet 8 from 9 following upstream
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble as build
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -15,7 +15,7 @@ ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 # renovate: packageName=docker/cli datasource=github-tags
 ARG DOCKER_VERSION=29.0.2
 # renovate: packageName=docker/buildx
-ARG BUILDX_VERSION=0.36.1
+ARG BUILDX_VERSION=0.37.0
 
 RUN apt update -y && apt install curl unzip -y
 
