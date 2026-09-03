@@ -3,7 +3,7 @@
 
 # Source: https://github.com/dotnet/dotnet-docker - This changes to Ubuntu 24.04 instead of (22.04) jammy
 # and downgraded to dotnet 8 from 9 following upstream
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble as build
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble AS build
 
 ARG TARGETOS
 ARG TARGETARCH
