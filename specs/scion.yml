@@ -1,0 +1,25 @@
+# spec for building the Scion Hub from the upstream repository
+# https://github.com/GoogleCloudPlatform/scion
+#
+# Only the Hub image is built here. The upstream root Dockerfile is a
+# self-contained multi-stage build (npm web frontend -> Go binary with the web
+# UI embedded -> debian runtime) with no dependency on another Scion image, so
+# the flat spec matrix can build it directly. The chart runs it as UID 1000 via
+# pod securityContext, so no non-root Dockerfile variant is required.
+#
+# The agent harness image chain (core-base -> scion-base -> scion-<harness>) is
+# intentionally NOT listed: each layer consumes the previous one through the
+# BASE_IMAGE build-arg, and this workflow builds spec entries independently, so
+# the chain cannot be ordered here. Build it with upstream's
+# image-build/scripts/build-images.sh --target all --registry <registry> --push
+# when agent dispatch is needed.
+repository: GoogleCloudPlatform/scion
+# Pinned: the chart is unreleased and the repository publishes no version tags,
+# so build from an explicit commit rather than a moving branch.
+ref: 5573e7982e9e4bdb86e78dc24c1dc76ef954ded6
+builds:
+  - name: scion-hub
+    dockerfile: Dockerfile
+    imageTags: DATE,REF
+    # The node + go multi-stage build is large; the runner needs the disk.
+    clean_runner: true
