@@ -14,7 +14,7 @@
 # writable emptyDir at /home/open-design for OpenCode state.
 
 # renovate: packageName=ghcr.io/nexu-io/od datasource=docker
-ARG OD_VERSION=0.23.0
+ARG OD_VERSION=0.24.1
 FROM ghcr.io/nexu-io/od:${OD_VERSION}
 
 USER root
