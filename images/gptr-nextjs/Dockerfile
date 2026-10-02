@@ -16,7 +16,7 @@
 
 FROM node:24.21.0-alpine AS builder
 # renovate: packageName=assafelovic/gpt-researcher
-ARG GPTR_VERSION=v3.6.1
+ARG GPTR_VERSION=v3.7.0
 RUN apk add --no-cache git
 WORKDIR /app
 RUN git clone --depth 1 --branch ${GPTR_VERSION} https://github.com/assafelovic/gpt-researcher.git .
