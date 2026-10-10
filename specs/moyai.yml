@@ -1,0 +1,15 @@
+repository: BerriAI/moyai
+ref: d31655ce1fca9f6126541e0525cdac693cb7ab07 # moyai-commit
+builds:
+  - name: moyai
+    dockerfile: Dockerfile
+    context: .
+    platforms: linux/amd64
+    imageTags: DATE,REF
+  - name: moyai-sandbox
+    dockerfile: Dockerfile.sandbox
+    context: .
+    platforms: linux/amd64
+    imageTags: DATE,REF
+    # The Hermes build environment (pm.build_env) is large; the runner needs the disk.
+    clean_runner: true

@@ -84,6 +84,21 @@
       "depNameTemplate": "assafelovic/gpt-researcher",
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Moyai commit hash from API for ref",
+      "managerFilePatterns": [
+        "/^specs/moyai\\.yml$/"
+      ],
+      "matchStrings": [
+        "ref:\\s*(?<currentDigest>[a-f0-9]{40}) # moyai-commit"
+      ],
+      "depNameTemplate": "moyai-commit",
+      "versioningTemplate": "loose",
+      "datasourceTemplate": "custom.moyaiCommit",
+      "currentValueTemplate": "0.0.0",
+      "autoReplaceStringTemplate": "ref: {{{ newDigest }}} # moyai-commit"
     }
   ],
   "customDatasources": {
@@ -92,6 +107,13 @@
       "format": "json",
       "transformTemplates": [
         "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": id}]}"
+      ]
+    },
+    "moyaiCommit": {
+      "defaultRegistryUrlTemplate": "https://api.github.com/repos/BerriAI/moyai/commits/main",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": sha}]}"
       ]
     },
     "crunchyPostgres": {
