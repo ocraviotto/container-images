@@ -1,5 +1,5 @@
 repository: BerriAI/moyai
-ref: d31655ce1fca9f6126541e0525cdac693cb7ab07 # moyai-commit
+ref: 0c7f4f70228c5b52f491c51c60621f6ce42ec0bd # moyai-commit
 builds:
   - name: moyai
     dockerfile: Dockerfile
