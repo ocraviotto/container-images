@@ -1,5 +1,5 @@
 repository: BerriAI/moyai
-ref: 3f1d5fef6fd76ea13b97b27d09e37b9149766327 # moyai-commit
+ref: cf1844fac07e8ad17fbcfea8edd95ca7d1823757 # moyai-commit (last Substrate-capable; #480 removed Substrate)
 builds:
   - name: moyai
     dockerfile: Dockerfile
