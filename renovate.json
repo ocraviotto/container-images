@@ -126,6 +126,13 @@
   },
   "packageRules": [
     {
+      "description": "Moyai dropped Substrate + Dockerfile.sandbox in #480; pin to cf1844f until Substrate returns upstream.",
+      "matchDatasources": [
+        "custom.moyaiCommit"
+      ],
+      "enabled": false
+    },
+    {
       "matchFileNames": [
         ".github/**"
       ],
