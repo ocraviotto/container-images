@@ -17,6 +17,9 @@
 ARG MEM0_VERSION=v2.2.1
 
 FROM python:3.13-slim AS builder
+# A global ARG is only visible to FROM lines; it must be redeclared inside the
+# stage to be available to RUN.
+ARG MEM0_VERSION
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN apt-get update \
@@ -25,10 +28,13 @@ RUN apt-get update \
 WORKDIR /src
 RUN git clone --depth 1 --branch "${MEM0_VERSION}" \
     https://github.com/mem0ai/mem0.git .
-# Install the pinned checkout first; the later requirements pass sees mem0ai
-# already installed and does not re-resolve it from PyPI.
+# Install the pinned checkout first. `pip install --prefix` does not add the
+# prefix to sys.path, so PYTHONPATH exposes the installed mem0ai 2.2.1 to the
+# second pip run; the `mem0ai>=0.1.48` line in requirements.txt is then already
+# satisfied and the SDK is not re-resolved from PyPI.
 RUN pip install --prefix=/install /src \
-    && pip install --prefix=/install -r /src/server/requirements.txt
+    && PYTHONPATH=/install/lib/python3.13/site-packages \
+       pip install --prefix=/install -r /src/server/requirements.txt
 
 
 FROM python:3.13-slim
