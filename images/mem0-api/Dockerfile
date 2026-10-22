@@ -16,7 +16,7 @@
 # renovate: packageName=mem0ai/mem0 depName=mem0 datasource=github-tags versioning=semver
 ARG MEM0_VERSION=v2.2.1
 
-FROM python:3.13-slim AS builder
+FROM python:3.15-slim AS builder
 # A global ARG is only visible to FROM lines; it must be redeclared inside the
 # stage to be available to RUN.
 ARG MEM0_VERSION
@@ -37,7 +37,7 @@ RUN pip install --prefix=/install /src \
        pip install --prefix=/install -r /src/server/requirements.txt
 
 
-FROM python:3.13-slim
+FROM python:3.15-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 RUN groupadd --gid 1000 mem0 \
