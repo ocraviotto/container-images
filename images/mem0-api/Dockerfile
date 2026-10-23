@@ -9,14 +9,14 @@
 #   - it copies the dashboard source into the API image.
 #
 # Installing the package from the pinned checkout (`pip install /src`) makes the
-# SDK version match the server code exactly. Python 3.13 is the current stable
-# release line (security support through October 2029); 3.12 remains supported,
-# but 3.13 is the forward-looking choice.
+# SDK version match the server code exactly. Python is held at 3.13 because
+# mem0 v2.2.1 pins pydantic==2.10.4 -> pydantic-core 2.27.2 (pyo3 0.22), which
+# has no 3.14/3.15 wheels and does not compile on newer interpreters.
 #
 # renovate: packageName=mem0ai/mem0 depName=mem0 datasource=github-tags versioning=semver
 ARG MEM0_VERSION=v2.2.1
 
-FROM python:3.15-slim AS builder
+FROM python:3.13-slim AS builder
 # A global ARG is only visible to FROM lines; it must be redeclared inside the
 # stage to be available to RUN.
 ARG MEM0_VERSION
@@ -32,12 +32,13 @@ RUN git clone --depth 1 --branch "${MEM0_VERSION}" \
 # prefix to sys.path, so PYTHONPATH exposes the installed mem0ai 2.2.1 to the
 # second pip run; the `mem0ai>=0.1.48` line in requirements.txt is then already
 # satisfied and the SDK is not re-resolved from PyPI.
-RUN pip install --prefix=/install /src \
-    && PYTHONPATH=/install/lib/python3.13/site-packages \
+RUN PYVER="$(python -c 'import sys; print("%d.%d" % sys.version_info[:2])')" \
+    && pip install --prefix=/install /src \
+    && PYTHONPATH="/install/lib/python${PYVER}/site-packages" \
        pip install --prefix=/install -r /src/server/requirements.txt
 
 
-FROM python:3.15-slim
+FROM python:3.13-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 RUN groupadd --gid 1000 mem0 \
