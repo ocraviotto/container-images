@@ -1,0 +1,10 @@
+# spec for building contour-authserver from the upstream repository
+# https://github.com/projectcontour/contour-authserver
+repository: projectcontour/contour-authserver
+ref: v4
+builds:
+  - name: contour-authserver
+    imageTags: DATE,REF
+    # The upstream Dockerfile hardcodes GOARCH=amd64, so an arm64 image would
+    # contain an amd64 binary. Build amd64 only.
+    platforms: linux/amd64
