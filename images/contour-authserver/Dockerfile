@@ -8,6 +8,9 @@
 #   - building the pinned commit here lets us use a current Go toolchain and
 #     produce correct multi-arch images (upstream hardcodes GOARCH=amd64).
 #
+# The OIDC backend is patched after checkout: upstream never emits Set-Cookie,
+# so a browser cannot keep an authenticated session. See oidc-session.patch.
+#
 # Renovate updates CONTOUR_AUTHSERVER_VERSION below (and in .version) to the
 # latest projectcontour/contour-authserver main commit.
 
@@ -25,8 +28,17 @@ RUN apt-get update \
 
 WORKDIR /src
 RUN git clone https://github.com/projectcontour/contour-authserver.git . \
-    && git checkout --detach "${CONTOUR_AUTHSERVER_VERSION}" \
-    && CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" make build
+    && git checkout --detach "${CONTOUR_AUTHSERVER_VERSION}"
+
+# git apply --check fails the build if a Renovate bump moves the context, so
+# the fix cannot be silently dropped. gofmt -l catches formatting drift before
+# make build runs go fmt/go vet.
+COPY oidc-session.patch /tmp/oidc-session.patch
+RUN git apply --check /tmp/oidc-session.patch \
+    && git apply /tmp/oidc-session.patch \
+    && test -z "$(gofmt -l pkg/auth/oidc_connect.go)"
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" make build
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
