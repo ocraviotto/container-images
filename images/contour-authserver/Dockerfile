@@ -31,12 +31,11 @@ RUN git clone https://github.com/projectcontour/contour-authserver.git . \
     && git checkout --detach "${CONTOUR_AUTHSERVER_VERSION}"
 
 # git apply --check fails the build if a Renovate bump moves the context, so
-# the fix cannot be silently dropped. gofmt -l catches formatting drift before
-# make build runs go fmt/go vet.
+# the fix cannot be silently dropped. Formatting is left to make build's
+# go fmt: gofmt behaviour changes between Go releases and is not a build gate.
 COPY oidc-session.patch /tmp/oidc-session.patch
 RUN git apply --check /tmp/oidc-session.patch \
-    && git apply /tmp/oidc-session.patch \
-    && test -z "$(gofmt -l pkg/auth/oidc_connect.go)"
+    && git apply /tmp/oidc-session.patch
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" make build
 
