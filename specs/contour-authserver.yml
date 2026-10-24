@@ -1,7 +1,9 @@
 # spec for building contour-authserver from the upstream repository
 # https://github.com/projectcontour/contour-authserver
+# Upstream has no release newer than v4 (2023-08), so pin the latest main
+# commit; Renovate bumps it when upstream changes.
 repository: projectcontour/contour-authserver
-ref: v4
+ref: 5ea919dd5cea8539865915f59c8d7b0e0dbe3684 # contour-authserver-commit
 builds:
   - name: contour-authserver
     imageTags: DATE,REF
