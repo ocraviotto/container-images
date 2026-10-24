@@ -99,6 +99,21 @@
       "datasourceTemplate": "custom.moyaiCommit",
       "currentValueTemplate": "0.0.0",
       "autoReplaceStringTemplate": "ref: {{{ newDigest }}} # moyai-commit"
+    },
+    {
+      "customType": "regex",
+      "description": "Update contour-authserver main commit hash from API for ref",
+      "managerFilePatterns": [
+        "/^specs/contour-authserver\\.yml$/"
+      ],
+      "matchStrings": [
+        "ref:\\s*(?<currentDigest>[a-f0-9]{40}) # contour-authserver-commit"
+      ],
+      "depNameTemplate": "contour-authserver-commit",
+      "versioningTemplate": "loose",
+      "datasourceTemplate": "custom.contourAuthserverCommit",
+      "currentValueTemplate": "0.0.0",
+      "autoReplaceStringTemplate": "ref: {{{ newDigest }}} # contour-authserver-commit"
     }
   ],
   "customDatasources": {
@@ -111,6 +126,13 @@
     },
     "moyaiCommit": {
       "defaultRegistryUrlTemplate": "https://api.github.com/repos/BerriAI/moyai/commits/main",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": sha}]}"
+      ]
+    },
+    "contourAuthserverCommit": {
+      "defaultRegistryUrlTemplate": "https://api.github.com/repos/projectcontour/contour-authserver/commits/main",
       "format": "json",
       "transformTemplates": [
         "{\"releases\":[{\"version\": \"0.0.0\", \"digest\": sha}]}"
@@ -131,6 +153,13 @@
         "custom.moyaiCommit"
       ],
       "enabled": false
+    },
+    {
+      "description": "Contour authserver has no release tags newer than v4; track the main branch commit.",
+      "matchDatasources": [
+        "custom.contourAuthserverCommit"
+      ],
+      "groupName": "Contour Authserver (automatic)"
     },
     {
       "matchFileNames": [
