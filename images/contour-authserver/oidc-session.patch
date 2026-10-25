@@ -1,5 +1,5 @@
 diff --git a/pkg/auth/oidc_connect.go b/pkg/auth/oidc_connect.go
-index f34d9b1..ac8cbc5 100644
+index f34d9b1..97ce167 100644
 --- a/pkg/auth/oidc_connect.go
 +++ b/pkg/auth/oidc_connect.go
 @@ -21,6 +21,8 @@ import (
@@ -82,7 +82,7 @@ index f34d9b1..ac8cbc5 100644
  	state.Scheme = u.Scheme
  
 -	authCodeURL := o.oauth2Config().AuthCodeURL(state.OAuthState)
-+	authCodeURL := o.oauth2Config(provider).AuthCodeURL(state.OAuthState)
++	authCodeURL := o.oauth2Config(provider, o.requestRedirectURL(u)).AuthCodeURL(state.OAuthState)
  
  	byteState := store.ConvertToByte(state)
  	if err := o.Cache.Set(state.OAuthState, byteState); err != nil {
@@ -100,7 +100,7 @@ index f34d9b1..ac8cbc5 100644
  	context := oidc.ClientContext(ctx, o.HTTPClient)
  
 -	token, err := o.oauth2Config().Exchange(context, code)
-+	token, err := o.oauth2Config(provider).Exchange(context, code)
++	token, err := o.oauth2Config(provider, o.requestRedirectURL(u)).Exchange(context, code)
  	if err != nil {
  		// 2.3.1 Token invalid, return Internal Server Error
  		o.Log.Error(err, "Token exchange error")
@@ -200,17 +200,33 @@ index f34d9b1..ac8cbc5 100644
  // initProvider initialize oidc provide with ths given issuer URL. return oidc.Provider.
  func (o *OIDCConnect) initProvider(ctx context.Context) (*oidc.Provider, error) {
  	provider, err := oidc.NewProvider(ctx, o.OidcConfig.IssuerURL)
-@@ -274,11 +318,11 @@ func (o *OIDCConnect) initProvider(ctx context.Context) (*oidc.Provider, error)
+@@ -273,14 +317,26 @@ func (o *OIDCConnect) initProvider(ctx context.Context) (*oidc.Provider, error)
+ 	return provider, nil
  }
  
++// requestRedirectURL builds the OAuth2 redirect URI from the request host so
++// one authserver instance can serve several virtual hosts. Every host's
++// /callback must be registered on the OIDC client; the configured RedirectURL
++// is only a fallback for requests without a host.
++func (o *OIDCConnect) requestRedirectURL(u *url.URL) string {
++	if u == nil || u.Host == "" {
++		return o.OidcConfig.RedirectURL + o.OidcConfig.RedirectPath
++	}
++
++	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, o.OidcConfig.RedirectPath)
++}
++
  // oauth2Config factory method to oauth2Config.
 -func (o *OIDCConnect) oauth2Config() *oauth2.Config {
-+func (o *OIDCConnect) oauth2Config(provider *oidc.Provider) *oauth2.Config {
++func (o *OIDCConnect) oauth2Config(provider *oidc.Provider, redirectURL string) *oauth2.Config {
  	return &oauth2.Config{
  		ClientID:     o.OidcConfig.ClientID,
  		ClientSecret: o.OidcConfig.ClientSecret,
 -		Endpoint:     o.provider.Endpoint(),
 +		Endpoint:     provider.Endpoint(),
  		Scopes:       o.OidcConfig.Scopes,
- 		RedirectURL:  o.OidcConfig.RedirectURL + o.OidcConfig.RedirectPath,
+-		RedirectURL:  o.OidcConfig.RedirectURL + o.OidcConfig.RedirectPath,
++		RedirectURL:  redirectURL,
  	}
+ }
+ 
