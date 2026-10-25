@@ -1,0 +1,100 @@
+--- a/pkg/auth/oidc_connect.go
++++ b/pkg/auth/oidc_connect.go
+@@ -110,17 +110,15 @@
+ 		}
+ 
+ 		if o.isValidStateToken(ctx, state, provider) {
++			// Keep the session in the cache for the configured TTL and refresh
++			// it on each request. The cookie only carries the state ID, so the
++			// token material never leaves the server.
+ 			stateJSON, _ := json.Marshal(state)
+-			// Restore cookies.
+-			resp := createResponse(http.StatusOK)
+-
+-			resp.Response.Header.Add(oauthTokenName, string(stateJSON))
+-
+-			if err := o.Cache.Delete(state.OAuthState); err != nil {
+-				o.Log.Error(err, "error deleting state")
++			if err := o.Cache.Set(state.OAuthState, stateJSON); err != nil {
++				o.Log.Error(err, "error refreshing state")
+ 			}
+ 
+-			return resp, true, nil
++			return createResponse(http.StatusOK), true, nil
+ 		}
+ 	}
+ 
+@@ -133,6 +131,9 @@
+ 	state := store.NewState()
+ 	state.GenerateOauthState()
+ 	state.RequestPath = path.Join(u.Host, u.Path)
++	if u.RawQuery != "" {
++		state.RequestPath += "?" + u.RawQuery
++	}
+ 	state.Scheme = u.Scheme
+ 
+ 	authCodeURL := o.oauth2Config().AuthCodeURL(state.OAuthState)
+@@ -197,13 +198,17 @@
+ 		o.Log.Error(err, "error setting cache state")
+ 	}
+ 
+-	// Set  redirection.
++	// Set the session cookie on this redirect. A 3xx from ext_authz is a
++	// denied response, so its headers reach the downstream client. The cookie
++	// carries only the state ID; token material stays in the server cache.
+ 	resp := createResponse(http.StatusTemporaryRedirect)
+-	resp.Response.Header.Add(stateQueryParamName, state.OAuthState)
++	resp.Response.Header.Add("Set-Cookie", fmt.Sprintf(
++		"%s=%s; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=%d",
++		oauthTokenName, url.QueryEscape(state.OAuthState), int(o.OidcConfig.CacheTimeout) * 60,
++	))
+ 
+ 	// TODO(robinfoe) #18 : OIDC support should propagate any claims back to the request
+-	resp.Response.Header.Add("Location",
+-		fmt.Sprintf("%s://%s?%s=%s", state.Scheme, state.RequestPath, stateQueryParamName, state.OAuthState))
++	resp.Response.Header.Add("Location", fmt.Sprintf("%s://%s", state.Scheme, state.RequestPath))
+ 
+ 	return resp, nil
+ }
+@@ -239,24 +244,27 @@
+ 
+ // getStateFromCookie retrieve state token from cookie header and return the value as OIDCState.
+ func (o *OIDCConnect) getStateFromCookie(req *Request) (*store.OIDCState, error) {
+-	var state *store.OIDCState
+-
+-	cookieVal := req.Request.Header.Get("cookie")
++	cookieVal := req.Request.Header.Get("Cookie")
+ 
+ 	// Check through and get the right cookies
+-	if len(cookieVal) > 0 {
+-		cookies := strings.Split(cookieVal, ";")
++	for _, c := range strings.Split(cookieVal, ";") {
++		c = strings.TrimSpace(c)
++		name, value, ok := strings.Cut(c, "=")
++		if !ok || name != oauthTokenName || value == "" {
++			continue
++		}
+ 
+-		for _, c := range cookies {
+-			c = strings.TrimSpace(c)
+-			if strings.HasPrefix(c, oauthTokenName) {
+-				cookieJSON := c[len(oauthTokenName)+1:]
+-				if len(cookieJSON) > 0 {
+-					state = store.ConvertToType([]byte(cookieJSON))
+-					return state, nil
+-				}
+-			}
++		stateID, err := url.QueryUnescape(value)
++		if err != nil {
++			return nil, err
+ 		}
++
++		stateByte, err := o.Cache.Get(stateID)
++		if err != nil {
++			return nil, err
++		}
++
++		return store.ConvertToType(stateByte), nil
+ 	}
+ 
+ 	return nil, fmt.Errorf("no %q cookie", oauthTokenName)
