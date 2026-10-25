@@ -6,15 +6,15 @@
 #
 # Both are pinned and served from this image instead, so the page works
 # without third-party requests and cannot change underneath us. The demo
-# markup itself comes from upstream at a pinned commit; prepare-demo.mjs
-# rewrites the two external references.
+# markup itself comes from an upstream release; prepare-demo.mjs rewrites
+# the two external references.
 #
 # The wasm-bindgen artifacts committed under docs-site/public/demo are stale
 # (they do not export convert()), so the same npm package the live demo loads
 # is installed at a pinned version instead.
 
-# renovate: html-to-markdown-commit
-ARG HTML_TO_MARKDOWN_VERSION=2fe91f59492e936e1150264c832d9c776f6fd68e
+# renovate: packageName=xberg-io/html-to-markdown datasource=github-releases
+ARG HTML_TO_MARKDOWN_VERSION=v3.18.6
 
 FROM alpine:3.23.7 AS source
 ARG HTML_TO_MARKDOWN_VERSION
