@@ -1,6 +1,45 @@
+diff --git a/pkg/auth/oidc_connect.go b/pkg/auth/oidc_connect.go
+index f34d9b1..ac8cbc5 100644
 --- a/pkg/auth/oidc_connect.go
 +++ b/pkg/auth/oidc_connect.go
-@@ -110,17 +110,15 @@
+@@ -21,6 +21,8 @@ import (
+ 	"net/url"
+ 	"path"
+ 	"strings"
++	"sync"
++	"time"
+ 
+ 	"github.com/allegro/bigcache"
+ 	"github.com/coreos/go-oidc/v3/oidc"
+@@ -42,6 +44,7 @@ type OIDCConnect struct {
+ 	Cache      *bigcache.BigCache
+ 	HTTPClient *http.Client
+ 	provider   *oidc.Provider
++	providerMu sync.Mutex
+ }
+ 
+ // Implement interface.
+@@ -56,10 +59,6 @@ func (o *OIDCConnect) Check(ctx context.Context, req *Request) (*Response, error
+ 		"id", req.ID,
+ 	)
+ 
+-	if o.provider == nil {
+-		o.provider, _ = o.initProvider(ctx)
+-	}
+-
+ 	url := parseURL(req)
+ 
+ 	// Check if the current request matches the callback path.
+@@ -102,25 +101,22 @@ func (o *OIDCConnect) isValidState(ctx context.Context, req *Request, url *url.U
+ 
+ 	// State exists, proceed with token validation.
+ 	if state != nil {
+-		// Re-initialize provider to refresh the context, this seems like bugs with coreos go-oidc module.
+-		provider, err := o.initProvider(ctx)
++		provider, err := o.getProvider()
+ 		if err != nil {
+ 			o.Log.Error(err, "fail to initialize provider")
+ 			return createResponse(http.StatusInternalServerError), false, err
  		}
  
  		if o.isValidStateToken(ctx, state, provider) {
@@ -24,7 +63,16 @@
  		}
  	}
  
-@@ -133,6 +131,9 @@
+@@ -130,12 +126,21 @@ func (o *OIDCConnect) isValidState(ctx context.Context, req *Request, url *url.U
+ 
+ // loginHandler takes a url returning a Response with a new state that is required by oauth during initial user login.
+ func (o *OIDCConnect) loginHandler(u *url.URL) Response {
++	provider, err := o.getProvider()
++	if err != nil {
++		o.Log.Error(err, "fail to initialize provider")
++		return createResponse(http.StatusInternalServerError)
++	}
++
  	state := store.NewState()
  	state.GenerateOauthState()
  	state.RequestPath = path.Join(u.Host, u.Path)
@@ -33,8 +81,30 @@
 +	}
  	state.Scheme = u.Scheme
  
- 	authCodeURL := o.oauth2Config().AuthCodeURL(state.OAuthState)
-@@ -197,13 +198,17 @@
+-	authCodeURL := o.oauth2Config().AuthCodeURL(state.OAuthState)
++	authCodeURL := o.oauth2Config(provider).AuthCodeURL(state.OAuthState)
+ 
+ 	byteState := store.ConvertToByte(state)
+ 	if err := o.Cache.Set(state.OAuthState, byteState); err != nil {
+@@ -170,10 +175,16 @@ func (o *OIDCConnect) callbackHandler(ctx context.Context, u *url.URL) (Response
+ 		return createResponse(http.StatusBadRequest), err
+ 	}
+ 
++	provider, err := o.getProvider()
++	if err != nil {
++		o.Log.Error(err, "fail to initialize provider")
++		return createResponse(http.StatusInternalServerError), err
++	}
++
+ 	// Retrieve token. and check token validity
+ 	context := oidc.ClientContext(ctx, o.HTTPClient)
+ 
+-	token, err := o.oauth2Config().Exchange(context, code)
++	token, err := o.oauth2Config(provider).Exchange(context, code)
+ 	if err != nil {
+ 		// 2.3.1 Token invalid, return Internal Server Error
+ 		o.Log.Error(err, "Token exchange error")
+@@ -197,13 +208,17 @@ func (o *OIDCConnect) callbackHandler(ctx context.Context, u *url.URL) (Response
  		o.Log.Error(err, "error setting cache state")
  	}
  
@@ -56,7 +126,7 @@
  
  	return resp, nil
  }
-@@ -239,24 +244,27 @@
+@@ -239,29 +254,58 @@ func (o *OIDCConnect) isValidStateToken(ctx context.Context, state *store.OIDCSt
  
  // getStateFromCookie retrieve state token from cookie header and return the value as OIDCState.
  func (o *OIDCConnect) getStateFromCookie(req *Request) (*store.OIDCState, error) {
@@ -68,13 +138,7 @@
  	// Check through and get the right cookies
 -	if len(cookieVal) > 0 {
 -		cookies := strings.Split(cookieVal, ";")
-+	for _, c := range strings.Split(cookieVal, ";") {
-+		c = strings.TrimSpace(c)
-+		name, value, ok := strings.Cut(c, "=")
-+		if !ok || name != oauthTokenName || value == "" {
-+			continue
-+		}
- 
+-
 -		for _, c := range cookies {
 -			c = strings.TrimSpace(c)
 -			if strings.HasPrefix(c, oauthTokenName) {
@@ -84,17 +148,69 @@
 -					return state, nil
 -				}
 -			}
++	for _, c := range strings.Split(cookieVal, ";") {
++		c = strings.TrimSpace(c)
++		name, value, ok := strings.Cut(c, "=")
++		if !ok || name != oauthTokenName || value == "" {
++			continue
++		}
++
 +		stateID, err := url.QueryUnescape(value)
 +		if err != nil {
 +			return nil, err
- 		}
++		}
 +
 +		stateByte, err := o.Cache.Get(stateID)
 +		if err != nil {
 +			return nil, err
-+		}
+ 		}
 +
 +		return store.ConvertToType(stateByte), nil
  	}
  
  	return nil, fmt.Errorf("no %q cookie", oauthTokenName)
+ }
+ 
++// getProvider returns the cached OIDC provider, discovering it on first use.
++// Discovery deliberately does not use the ext_authz request context: Contour
++// cancels that context at its authorization responseTimeout, which aborts the
++// IdP round trip and previously left o.provider nil (and panicking). Running it
++// on a background context with its own deadline makes the result independent of
++// any single request, and caching it stops per-request re-discovery.
++func (o *OIDCConnect) getProvider() (*oidc.Provider, error) {
++	o.providerMu.Lock()
++	defer o.providerMu.Unlock()
++
++	if o.provider != nil {
++		return o.provider, nil
++	}
++
++	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
++	defer cancel()
++
++	provider, err := o.initProvider(ctx)
++	if err != nil {
++		return nil, err
++	}
++
++	o.provider = provider
++	return provider, nil
++}
++
+ // initProvider initialize oidc provide with ths given issuer URL. return oidc.Provider.
+ func (o *OIDCConnect) initProvider(ctx context.Context) (*oidc.Provider, error) {
+ 	provider, err := oidc.NewProvider(ctx, o.OidcConfig.IssuerURL)
+@@ -274,11 +318,11 @@ func (o *OIDCConnect) initProvider(ctx context.Context) (*oidc.Provider, error)
+ }
+ 
+ // oauth2Config factory method to oauth2Config.
+-func (o *OIDCConnect) oauth2Config() *oauth2.Config {
++func (o *OIDCConnect) oauth2Config(provider *oidc.Provider) *oauth2.Config {
+ 	return &oauth2.Config{
+ 		ClientID:     o.OidcConfig.ClientID,
+ 		ClientSecret: o.OidcConfig.ClientSecret,
+-		Endpoint:     o.provider.Endpoint(),
++		Endpoint:     provider.Endpoint(),
+ 		Scopes:       o.OidcConfig.Scopes,
+ 		RedirectURL:  o.OidcConfig.RedirectURL + o.OidcConfig.RedirectPath,
+ 	}
