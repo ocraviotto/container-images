@@ -10,8 +10,9 @@
 #
 # The OIDC backend is patched after checkout: upstream never emits Set-Cookie,
 # so a browser cannot keep an authenticated session; it also re-discovers the
-# provider inside every request and panics when discovery fails. See
-# oidc-session.patch.
+# provider inside every request and panics when discovery fails. The patch
+# additionally derives the OAuth2 redirect URI from the request host, so one
+# authserver can serve several virtual hosts. See oidc-session.patch.
 #
 # Renovate updates CONTOUR_AUTHSERVER_VERSION below (and in .version) to the
 # latest projectcontour/contour-authserver main commit.
