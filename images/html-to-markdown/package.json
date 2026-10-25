@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "dependencies": {
+    "@fontsource-variable/exo-2": "5.3.0",
+    "@fontsource-variable/sora": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "@xberg-io/html-to-markdown-wasm": "3.18.6"
+  }
+}
