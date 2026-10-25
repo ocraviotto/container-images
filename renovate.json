@@ -222,6 +222,19 @@
       "allowedVersions": "/^3\\.13/"
     },
     {
+      "description": "Hold the contour-authserver builder to the Go 1.26 line; minor toolchain bumps are deliberate.",
+      "matchFileNames": [
+        "images/contour-authserver/Dockerfile"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "golang"
+      ],
+      "allowedVersions": "/^1\\.26\\./"
+    },
+    {
       "matchDatasources": [
         "custom.crunchyPostgres"
       ],
