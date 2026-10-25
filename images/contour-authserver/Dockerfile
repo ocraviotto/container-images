@@ -9,7 +9,9 @@
 #     produce correct multi-arch images (upstream hardcodes GOARCH=amd64).
 #
 # The OIDC backend is patched after checkout: upstream never emits Set-Cookie,
-# so a browser cannot keep an authenticated session. See oidc-session.patch.
+# so a browser cannot keep an authenticated session; it also re-discovers the
+# provider inside every request and panics when discovery fails. See
+# oidc-session.patch.
 #
 # Renovate updates CONTOUR_AUTHSERVER_VERSION below (and in .version) to the
 # latest projectcontour/contour-authserver main commit.
