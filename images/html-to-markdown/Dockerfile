@@ -16,7 +16,7 @@
 # renovate: packageName=xberg-io/html-to-markdown datasource=github-releases
 ARG HTML_TO_MARKDOWN_VERSION=v3.18.6
 
-FROM alpine:3.23.7 AS source
+FROM alpine:3.24.3 AS source
 ARG HTML_TO_MARKDOWN_VERSION
 RUN apk add --no-cache git
 WORKDIR /src
@@ -25,14 +25,14 @@ RUN git init -q \
     && git fetch -q --depth 1 origin "${HTML_TO_MARKDOWN_VERSION}" \
     && git checkout -q FETCH_HEAD
 
-FROM node:24.22.0-alpine3.23 AS assets
+FROM node:24.22.1-alpine3.23 AS assets
 WORKDIR /assets
 COPY package.json prepare-demo.mjs ./
 COPY --from=source /src/docs-site/public/demo/index.html /src/docs-site/public/demo/script.js ./
 RUN node prepare-demo.mjs . \
     && npm install --omit=dev --ignore-scripts --no-audit --no-fund
 
-FROM nginx/nginx-unprivileged:1.30.6-alpine-slim
+FROM nginx/nginx-unprivileged:1.31.8-alpine-slim
 COPY --from=assets /assets/index.html /usr/share/nginx/html/index.html
 COPY --from=assets /assets/script.js /usr/share/nginx/html/script.js
 COPY --from=assets /assets/node_modules/@xberg-io/html-to-markdown-wasm/pkg/web/html_to_markdown_wasm.js /usr/share/nginx/html/
