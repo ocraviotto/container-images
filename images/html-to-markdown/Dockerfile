@@ -14,7 +14,7 @@
 # is installed at a pinned version instead.
 
 # renovate: packageName=xberg-io/html-to-markdown datasource=github-releases
-ARG HTML_TO_MARKDOWN_VERSION=v3.18.6
+ARG HTML_TO_MARKDOWN_VERSION=v3.19.0
 
 FROM alpine:3.24.3 AS source
 ARG HTML_TO_MARKDOWN_VERSION
@@ -25,7 +25,7 @@ RUN git init -q \
     && git fetch -q --depth 1 origin "${HTML_TO_MARKDOWN_VERSION}" \
     && git checkout -q FETCH_HEAD
 
-FROM node:24.22.1-alpine3.23 AS assets
+FROM node:24.22.2-alpine3.23 AS assets
 WORKDIR /assets
 COPY package.json prepare-demo.mjs ./
 COPY --from=source /src/docs-site/public/demo/index.html /src/docs-site/public/demo/script.js ./
