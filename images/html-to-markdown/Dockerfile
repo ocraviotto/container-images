@@ -25,7 +25,7 @@ RUN git init -q \
     && git fetch -q --depth 1 origin "${HTML_TO_MARKDOWN_VERSION}" \
     && git checkout -q FETCH_HEAD
 
-FROM node:24.22.2-alpine3.23 AS assets
+FROM node:26.13.0-alpine3.23 AS assets
 WORKDIR /assets
 COPY package.json prepare-demo.mjs ./
 COPY --from=source /src/docs-site/public/demo/index.html /src/docs-site/public/demo/script.js ./

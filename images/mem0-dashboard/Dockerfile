@@ -15,7 +15,7 @@
 # renovate: packageName=mem0ai/mem0 depName=mem0 datasource=github-tags versioning=semver
 ARG MEM0_VERSION=v2.2.1
 
-FROM node:24-alpine AS source
+FROM node:26-alpine AS source
 # A global ARG is only visible to FROM lines; it must be redeclared inside the
 # stage to be available to RUN.
 ARG MEM0_VERSION
@@ -24,7 +24,7 @@ WORKDIR /src
 RUN git clone --depth 1 --branch "${MEM0_VERSION}" \
     https://github.com/mem0ai/mem0.git .
 
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 RUN apk add --no-cache libc6-compat
 
 FROM base AS deps
