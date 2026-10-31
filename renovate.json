@@ -235,6 +235,22 @@
       "allowedVersions": "/^1\\.26\\./"
     },
     {
+      "description": "Keep Node.js base images on their current major line. Node 24 images stay on 24.x and any image moved to Node 26 stays on 26.x; major Node upgrades are deliberate, tested changes.",
+      "matchFileNames": [
+        "images/**"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
       "matchDatasources": [
         "custom.crunchyPostgres"
       ],
