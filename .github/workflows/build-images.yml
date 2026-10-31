@@ -118,6 +118,11 @@ jobs:
           export DATE_VER
 
           for SPEC_FILE in ${CHANGED_SPECS[@]}; do
+            # Deleted specs are still reported by git diff; skip them.
+            if [[ ! -f "$SPEC_FILE" ]]; then
+              echo "Skipping deleted spec: $SPEC_FILE"
+              continue
+            fi
             echo "Processing external spec: $SPEC_FILE..."
             # Convert YAML to JSON and read values using jq
             while IFS= read -r build_json; do

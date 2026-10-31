@@ -1,0 +1,2 @@
+# Torium upstream commit. Keep in sync with ARG TORIUM_COMMIT in Dockerfile.
+TORIUM_VERSION=9a0c0478aceb01bfe0165eb9928f4787140334b5
