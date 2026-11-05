@@ -1,0 +1,8 @@
+# Temporary exceptions for the bundled Docker buildx plugin.
+#
+# buildx v0.38.2 is the latest upstream release and still embeds
+# github.com/moby/go-archive v0.2.0 and golang.org/x/net v0.59.0.
+# Remove these entries and this file once buildx ships a release built
+# with the fixed versions (go-archive >= 0.3.0, x/net >= 0.60.0).
+CVE-2026-17106 exp:2027-01-31
+CVE-2026-78669 exp:2027-01-31
