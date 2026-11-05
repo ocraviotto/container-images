@@ -43,3 +43,34 @@ GHSA-g89c-p67h-r497 exp:2027-01-31
 GHSA-rcw4-f5rp-g42v exp:2027-01-31
 GHSA-rgj7-g3m4-5g8c exp:2027-01-31
 GHSA-wq5f-xc86-pv6w exp:2027-01-31
+
+# Trivy's local tar scan does not expose an OCI PURL, so the image-local
+# OpenVEX document cannot match during the pre-push scan. Keep the esbuild
+# findings time-boxed here; the VEX statement remains for registry-based
+# scans where the image PURL is available.
+CVE-2025-61726 exp:2027-01-31
+CVE-2025-61729 exp:2027-01-31
+CVE-2025-68121 exp:2027-01-31
+CVE-2026-111943 exp:2027-01-31
+CVE-2026-25679 exp:2027-01-31
+CVE-2026-27145 exp:2027-01-31
+CVE-2026-32280 exp:2027-01-31
+CVE-2026-32281 exp:2027-01-31
+CVE-2026-32283 exp:2027-01-31
+CVE-2026-33811 exp:2027-01-31
+CVE-2026-33814 exp:2027-01-31
+CVE-2026-33818 exp:2027-01-31
+CVE-2026-39820 exp:2027-01-31
+CVE-2026-39821 exp:2027-01-31
+CVE-2026-39822 exp:2027-01-31
+CVE-2026-39836 exp:2027-01-31
+CVE-2026-42499 exp:2027-01-31
+CVE-2026-42504 exp:2027-01-31
+CVE-2026-56853 exp:2027-01-31
+CVE-2026-56858 exp:2027-01-31
+CVE-2026-56859 exp:2027-01-31
+CVE-2026-56860 exp:2027-01-31
+CVE-2026-56862 exp:2027-01-31
+CVE-2026-78667 exp:2027-01-31
+CVE-2026-78669 exp:2027-01-31
+CVE-2026-97031 exp:2027-01-31
