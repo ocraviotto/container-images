@@ -18,3 +18,17 @@ RUN pip install --no-cache-dir --prefix=/install "mcp<2" .
 FROM python:3.15-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 COPY --from=build /install /usr/local
+
+# TODO(security): Remove these explicit upgrades once torium/mcp resolve
+# msgpack>=1.2.3, urllib3>=2.8.0, and setuptools>=78.1.1 themselves.
+# They are pinned here because the current dependency resolution still
+# selects vulnerable versions.
+RUN pip install --no-cache-dir --upgrade \
+      "msgpack>=1.2.3" \
+      "urllib3>=2.8.0" \
+      "setuptools>=78.1.1" \
+ && rm -rf /root/.cache/pip
+
+RUN adduser --disabled-password --gecos "" --uid 1001 torium
+ENV HOME=/home/torium
+USER torium
