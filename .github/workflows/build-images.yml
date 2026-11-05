@@ -353,14 +353,27 @@ jobs:
             /src
 
       - name: Scan image with Grype
+        env:
+          GRYPE_CONFIG: ${{ matrix.build_context }}/.grype.yaml
         run: |
+          set -euo pipefail
+
+          args=(
+            docker-archive:/work/image.tar
+            --fail-on high
+            --only-fixed
+          )
+
+          if [[ -f "${GRYPE_CONFIG}" ]]; then
+            cp "${GRYPE_CONFIG}" "${RUNNER_TEMP}/.grype.yaml"
+            args+=(--config /work/.grype.yaml)
+          fi
+
           docker run --rm \
             --volume "${RUNNER_TEMP}:/work:ro" \
             --env GRYPE_DB_CACHE_DIR=/tmp/grype \
             "${GRYPE_IMAGE}" \
-            docker-archive:/work/image.tar \
-            --fail-on high \
-            --only-fixed
+            "${args[@]}"
 
       - name: Clean up scan archive
         if: always()
