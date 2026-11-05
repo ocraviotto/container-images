@@ -342,14 +342,15 @@ jobs:
 
       - name: Scan Dockerfile config with Trivy
         run: |
+          mkdir -p "${RUNNER_TEMP}/trivy-config"
+          cp "${{ matrix.dockerfile_path }}" "${RUNNER_TEMP}/trivy-config/Dockerfile"
           docker run --rm \
-            --volume "${PWD}:/src:ro" \
+            --volume "${RUNNER_TEMP}/trivy-config:/src:ro" \
             "${TRIVY_IMAGE}" \
             config \
             --exit-code 1 \
             --severity HIGH,CRITICAL \
-            --no-progress \
-            "/src/${{ matrix.dockerfile_path }}"
+            /src
 
       - name: Scan image with Grype
         run: |
