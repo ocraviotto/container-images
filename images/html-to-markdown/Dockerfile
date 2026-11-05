@@ -47,3 +47,7 @@ COPY --from=assets /assets/node_modules/@fontsource/jetbrains-mono/files/jetbrai
 COPY --from=assets /assets/node_modules/@fontsource-variable/sora/LICENSE /usr/share/nginx/html/fonts/OFL-Sora.txt
 COPY --from=assets /assets/node_modules/@fontsource-variable/exo-2/LICENSE /usr/share/nginx/html/fonts/OFL-Exo-2.txt
 COPY --from=assets /assets/node_modules/@fontsource/jetbrains-mono/LICENSE /usr/share/nginx/html/fonts/OFL-JetBrains-Mono.txt
+
+# The base image already runs as an unprivileged user; make it explicit so
+# Dockerfile config scans can see the runtime user.
+USER nginx
