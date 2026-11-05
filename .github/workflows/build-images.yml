@@ -308,28 +308,72 @@ jobs:
         run: docker save "${{ matrix.image }}:scan-${{ github.run_id }}-${{ github.run_attempt }}" -o "${RUNNER_TEMP}/image.tar"
 
       - name: Scan image with Trivy
+        env:
+          VEX_FILE: ${{ matrix.build_context }}/openvex.json
+          IGNORE_FILE: ${{ matrix.build_context }}/.trivyignore
         run: |
+          set -euo pipefail
+
+          args=(
+            image
+            --input /work/image.tar
+            --scanners vuln,secret
+            --exit-code 1
+            --severity CRITICAL,HIGH
+            --ignore-unfixed
+            --cache-dir /tmp/trivy
+            --no-progress
+          )
+
+          if [[ -f "${VEX_FILE}" ]]; then
+            cp "${VEX_FILE}" "${RUNNER_TEMP}/openvex.json"
+            args+=(--vex /work/openvex.json)
+          fi
+
+          if [[ -f "${IGNORE_FILE}" ]]; then
+            cp "${IGNORE_FILE}" "${RUNNER_TEMP}/.trivyignore"
+            args+=(--ignorefile /work/.trivyignore)
+          fi
+
           docker run --rm \
             --volume "${RUNNER_TEMP}:/work:ro" \
             "${TRIVY_IMAGE}" \
-            image \
-            --input /work/image.tar \
-            --scanners vuln,secret,misconfig \
+            "${args[@]}"
+
+      - name: Scan Dockerfile config with Trivy
+        run: |
+          mkdir -p "${RUNNER_TEMP}/trivy-config"
+          cp "${{ matrix.dockerfile_path }}" "${RUNNER_TEMP}/trivy-config/Dockerfile"
+          docker run --rm \
+            --volume "${RUNNER_TEMP}/trivy-config:/src:ro" \
+            "${TRIVY_IMAGE}" \
+            config \
             --exit-code 1 \
-            --severity CRITICAL,HIGH \
-            --ignore-unfixed \
-            --cache-dir /tmp/trivy \
-            --no-progress
+            --severity HIGH,CRITICAL \
+            /src
 
       - name: Scan image with Grype
+        env:
+          GRYPE_CONFIG: ${{ matrix.build_context }}/.grype.yaml
         run: |
+          set -euo pipefail
+
+          args=(
+            docker-archive:/work/image.tar
+            --fail-on high
+            --only-fixed
+          )
+
+          if [[ -f "${GRYPE_CONFIG}" ]]; then
+            cp "${GRYPE_CONFIG}" "${RUNNER_TEMP}/.grype.yaml"
+            args+=(--config /work/.grype.yaml)
+          fi
+
           docker run --rm \
             --volume "${RUNNER_TEMP}:/work:ro" \
             --env GRYPE_DB_CACHE_DIR=/tmp/grype \
             "${GRYPE_IMAGE}" \
-            docker-archive:/work/image.tar \
-            --fail-on high \
-            --only-fixed
+            "${args[@]}"
 
       - name: Clean up scan archive
         if: always()
@@ -359,6 +403,7 @@ jobs:
         run: |
           docker run --rm \
             --user "$(id -u):$(id -g)" \
+            --mount type=tmpfs,destination=/tmp,tmpfs-mode=1777 \
             --volume "${RUNNER_TEMP}:/work" \
             --env HOME=/tmp \
             --env SYFT_REGISTRY_AUTH_AUTHORITY=ghcr.io \

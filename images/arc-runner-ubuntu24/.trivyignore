@@ -1,0 +1,41 @@
+# Time-boxed exceptions for tooling bundled in the current runner image.
+#
+# The actions/runner distribution and the Docker static package bundle
+# their own Node.js/npm dependencies and containerd/runc binaries. These
+# findings are in upstream tooling, not in anything this repository
+# builds. Revisit when the runner or Docker release refreshes them.
+CVE-2024-21538 exp:2027-01-31
+CVE-2025-64756 exp:2027-01-31
+CVE-2026-102276 exp:2027-01-31
+CVE-2026-102278 exp:2027-01-31
+CVE-2026-109383 exp:2027-01-31
+CVE-2026-109518 exp:2027-01-31
+CVE-2026-109869 exp:2027-01-31
+CVE-2026-116587 exp:2027-01-31
+CVE-2026-13149 exp:2027-01-31
+CVE-2026-14257 exp:2027-01-31
+CVE-2026-19534 exp:2027-01-31
+CVE-2026-23745 exp:2027-01-31
+CVE-2026-23950 exp:2027-01-31
+CVE-2026-24842 exp:2027-01-31
+CVE-2026-26960 exp:2027-01-31
+CVE-2026-26996 exp:2027-01-31
+CVE-2026-27903 exp:2027-01-31
+CVE-2026-27904 exp:2027-01-31
+CVE-2026-29786 exp:2027-01-31
+CVE-2026-31802 exp:2027-01-31
+CVE-2026-46600 exp:2027-01-31
+CVE-2026-48815 exp:2027-01-31
+CVE-2026-59873 exp:2027-01-31
+CVE-2026-59874 exp:2027-01-31
+CVE-2026-69152 exp:2027-01-31
+CVE-2026-69192 exp:2027-01-31
+CVE-2026-73566 exp:2027-01-31
+CVE-2026-87018 exp:2027-01-31
+CVE-2026-9496 exp:2027-01-31
+
+# Docker buildx 0.38.2 is the latest upstream release and still embeds
+# github.com/moby/go-archive v0.2.0 and golang.org/x/net v0.59.0.
+# Remove these when buildx ships a release built with the fixed versions.
+CVE-2026-17106 exp:2027-01-31
+CVE-2026-78669 exp:2027-01-31
