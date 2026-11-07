@@ -152,6 +152,7 @@ jobs:
                   .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $build.name),
                 build_args: ($build.buildArgs // []),
+                config_ignore: ($build.config_ignore // []),
                 clean_runner: (($build.clean_runner // false) | tostring)
               }' <(yq '.' "$SPEC_FILE"))
           done
@@ -202,6 +203,7 @@ jobs:
                 image_tags: ($ENV.GIT_TAGS | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
                 version: ($ENV.GIT_TAGS | split(",") | .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME),
+                config_ignore: [],
                 clean_runner: "false"
               }' \
             )
@@ -341,15 +343,29 @@ jobs:
             "${args[@]}"
 
       - name: Scan Dockerfile config with Trivy
+        env:
+          CONFIG_IGNORE: ${{ join(matrix.config_ignore, '\n') }}
         run: |
+          set -euo pipefail
+
           mkdir -p "${RUNNER_TEMP}/trivy-config"
           cp "${{ matrix.dockerfile_path }}" "${RUNNER_TEMP}/trivy-config/Dockerfile"
+
+          args=(
+            config
+            --exit-code 1
+            --severity HIGH,CRITICAL
+          )
+
+          if [[ -n "${CONFIG_IGNORE}" ]]; then
+            printf '%s\n' "${CONFIG_IGNORE}" > "${RUNNER_TEMP}/trivy-config/.trivyignore"
+            args+=(--ignorefile /src/.trivyignore)
+          fi
+
           docker run --rm \
             --volume "${RUNNER_TEMP}/trivy-config:/src:ro" \
             "${TRIVY_IMAGE}" \
-            config \
-            --exit-code 1 \
-            --severity HIGH,CRITICAL \
+            "${args[@]}" \
             /src
 
       - name: Scan image with Grype
