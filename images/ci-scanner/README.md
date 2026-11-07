@@ -1,9 +1,11 @@
 # ci-scanner
 
-Preinstalled toolchain for `avellaneda/ci-actions` scan jobs.
+Preinstalled security scanner toolchain for CI/CD pipelines.
 
 Published as `ghcr.io/ocraviotto/container-images/ci-scanner` for
-`linux/amd64` and `linux/arm64`.
+`linux/amd64` and `linux/arm64`. Use it as the job image or container in
+GitHub Actions, GitLab CI, Gitea/Forgejo Actions, Jenkins, Tekton, or any
+container-based runner. Pin it by digest in production.
 
 ## Tools
 
@@ -19,17 +21,55 @@ Published as `ghcr.io/ocraviotto/container-images/ci-scanner` for
 | `guarddog` | malicious package detection |
 | `sarif` (`sarif-tools`) | SARIF summaries and reports |
 
-Versions are pinned in the `Dockerfile` ARGs and updated by Renovate. They
-mirror `avellaneda/ci-actions/versions.env`; keep the two in sync when either
-side moves.
+All tools are on `PATH` under `/opt/ci-actions/bin`.
 
-## Use
+## Usage
 
-Use the image as the main container of a dedicated Forgejo runner class (for
-example `gvisor-scanner`) and point scan jobs at that label. The tools are on
-`PATH` under `/opt/ci-actions/bin`, so `ci-actions/setup` can be skipped
-entirely. This removes the per-job downloads of Trivy, Grype, Syft, Opengrep,
-Gitleaks, Cosign, Scorecard and the GuardDog Python dependencies.
+GitHub Actions:
 
-GuardDog and `sarif-tools` live in `/opt/ci-actions/venv`; `guarddog` and
-`sarif` are symlinked into `/opt/ci-actions/bin`.
+```yaml
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ocraviotto/container-images/ci-scanner@sha256:<digest>
+    steps:
+      - uses: actions/checkout@<commit-sha>
+      - run: trivy fs .
+```
+
+GitLab CI:
+
+```yaml
+scan:
+  image: ghcr.io/ocraviotto/container-images/ci-scanner@sha256:<digest>
+  script:
+    - trivy fs .
+```
+
+Locally:
+
+```sh
+docker run --rm -v "$PWD:/workspace" \
+  ghcr.io/ocraviotto/container-images/ci-scanner@sha256:<digest> \
+  trivy fs .
+```
+
+The image runs as UID/GID `10001`; `/workspace` and `/home/scanner` are
+writable. Mount source code under `/workspace`, or create another writable
+directory and pass it to the scanner.
+
+## Build notes
+
+- Release versions are pinned in the `Dockerfile` ARGs and updated by
+  Renovate.
+- The Go tools (Gitleaks, Cosign, Grype, Syft, Scorecard) are rebuilt from
+  source with Go 1.27.3 and patched `golang.org/x`, `klauspost/compress` and
+  `go-jose` modules. The upstream release binaries at the same versions carry
+  known fixable CVEs, so the release assets are not used for those tools.
+- Trivy is installed from its checksum-verified release asset. Opengrep
+  publishes no checksums file, so that binary is fetched over TLS from the
+  pinned release.
+- GuardDog and `sarif-tools` are installed from pinned PyPI versions in
+  `/opt/ci-actions/venv`; `guarddog` and `sarif` are symlinked into
+  `/opt/ci-actions/bin`.
