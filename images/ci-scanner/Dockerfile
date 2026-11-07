@@ -119,7 +119,16 @@ ARG OPENGREP_VERSION=1.33.1
 ARG GUARDDOG_VERSION=3.2.0
 # renovate: depName=sarif-tools datasource=pypi
 ARG SARIF_TOOLS_VERSION=3.0.5
+# renovate: depName=pip datasource=pypi
 ARG PIP_VERSION=26.2.0
+# renovate: depName=certifi datasource=pypi
+ARG CERTIFI_VERSION=2026.10.18
+# renovate: depName=msgpack datasource=pypi
+ARG MSGPACK_VERSION=1.2.3
+# renovate: depName=setuptools datasource=pypi
+ARG SETUPTOOLS_VERSION=78.1.1
+# renovate: depName=urllib3 datasource=pypi
+ARG URLLIB3_VERSION=2.8.0
 
 ARG TARGETARCH
 
