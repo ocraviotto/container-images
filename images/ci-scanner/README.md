@@ -63,13 +63,14 @@ directory and pass it to the scanner.
 
 - Release versions are pinned in the `Dockerfile` ARGs and updated by
   Renovate.
-- The Go tools (Gitleaks, Cosign, Grype, Syft, Scorecard) are rebuilt from
-  source with Go 1.27.3 and patched `golang.org/x`, `klauspost/compress` and
-  `go-jose` modules. The upstream release binaries at the same versions carry
-  known fixable CVEs, so the release assets are not used for those tools.
-- Trivy is installed from its checksum-verified release asset. Opengrep
-  publishes no checksums file, so that binary is fetched over TLS from the
-  pinned release.
+- The Go tools (Trivy, Gitleaks, Cosign, Grype, Syft, Scorecard) are rebuilt
+  from source with Go 1.27.3 and patched Go modules. The upstream release
+  binaries at the same versions carry known fixable CVEs, so the release
+  assets are not used for those tools.
+- Opengrep is installed from its pinned release asset. It publishes no
+  checksums file, so that binary is fetched over TLS.
 - GuardDog and `sarif-tools` are installed from pinned PyPI versions in
-  `/opt/ci-actions/venv`; `guarddog` and `sarif` are symlinked into
-  `/opt/ci-actions/bin`.
+  `/opt/ci-actions/venv`. `pip`, `setuptools` and `wheel` are removed after
+  the install so their vendored copies are not shipped; `guarddog` and
+  `sarif` are symlinked into `/opt/ci-actions/bin`.
+- No `.trivyignore` or `.grype.yaml` is used; the image scan is clean.
