@@ -18,6 +18,8 @@ FROM --platform=$BUILDPLATFORM golang:1.27.3-bookworm AS go-tools
 ARG TARGETOS=linux
 ARG TARGETARCH
 
+# renovate: depName=aquasecurity/trivy
+ARG TRIVY_VERSION=0.76.2
 # renovate: depName=gitleaks/gitleaks
 ARG GITLEAKS_VERSION=8.30.1
 # renovate: depName=sigstore/cosign
@@ -51,6 +53,11 @@ RUN set -eux; \
     mkdir -p /out /src; \
     export CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" \
            GOTOOLCHAIN=local GOFLAGS=-mod=mod; \
+    \
+    git clone --depth 1 --branch "v${TRIVY_VERSION}" https://github.com/aquasecurity/trivy /src/trivy; \
+    cd /src/trivy; \
+    go get "github.com/klauspost/compress@v${COMPRESS_VERSION}"; \
+    go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/trivy ./cmd/trivy; \
     \
     git clone --depth 1 --branch "v${GITLEAKS_VERSION}" https://github.com/gitleaks/gitleaks /src/gitleaks; \
     cd /src/gitleaks; \
@@ -111,8 +118,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/ci-actions/bin:${PATH} \
     HOME=/home/scanner
 
-# renovate: depName=aquasecurity/trivy
-ARG TRIVY_VERSION=0.76.2
 # renovate: depName=opengrep/opengrep
 ARG OPENGREP_VERSION=1.33.1
 # renovate: depName=guarddog datasource=pypi
