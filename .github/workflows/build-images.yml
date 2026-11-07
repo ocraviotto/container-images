@@ -317,7 +317,7 @@ jobs:
         env:
           VEX_FILE: ${{ matrix.build_context }}/openvex.json
           IGNORE_FILE: ${{ matrix.build_context }}/.trivyignore
-          IMAGE_IGNORE: ${{ join(matrix.image_ignore, '\n') }}
+          IMAGE_IGNORE: ${{ join(matrix.image_ignore, ',') }}
         run: |
           set -euo pipefail
 
@@ -343,7 +343,12 @@ jobs:
             have_ignore=true
           fi
           if [[ -n "${IMAGE_IGNORE}" ]]; then
-            printf '%s\n' "${IMAGE_IGNORE}" >> "${RUNNER_TEMP}/.trivyignore"
+            IFS=',' read -ra ids <<< "${IMAGE_IGNORE}"
+            for id in "${ids[@]}"; do
+              if [[ -n "${id}" ]]; then
+                printf '%s\n' "${id}" >> "${RUNNER_TEMP}/.trivyignore"
+              fi
+            done
             have_ignore=true
           fi
           if [[ "${have_ignore}" == "true" ]]; then
@@ -357,7 +362,7 @@ jobs:
 
       - name: Scan Dockerfile config with Trivy
         env:
-          CONFIG_IGNORE: ${{ join(matrix.config_ignore, '\n') }}
+          CONFIG_IGNORE: ${{ join(matrix.config_ignore, ',') }}
         run: |
           set -euo pipefail
 
@@ -371,13 +376,14 @@ jobs:
           )
 
           if [[ -n "${CONFIG_IGNORE}" ]]; then
+            IFS=',' read -ra ids <<< "${CONFIG_IGNORE}"
             {
               echo "misconfigurations:"
-              while IFS= read -r id; do
+              for id in "${ids[@]}"; do
                 if [[ -n "${id}" ]]; then
                   printf '  - id: %s\n' "${id}"
                 fi
-              done <<< "${CONFIG_IGNORE}"
+              done
             } > "${RUNNER_TEMP}/trivy-config/.trivyignore.yaml"
             args+=(--ignorefile /src/.trivyignore.yaml)
           fi
@@ -391,7 +397,7 @@ jobs:
       - name: Scan image with Grype
         env:
           GRYPE_CONFIG: ${{ matrix.build_context }}/.grype.yaml
-          GRYPE_IGNORE: ${{ join(matrix.grype_ignore, '\n') }}
+          GRYPE_IGNORE: ${{ join(matrix.grype_ignore, ',') }}
         run: |
           set -euo pipefail
 
@@ -402,13 +408,14 @@ jobs:
           )
 
           if [[ -n "${GRYPE_IGNORE}" ]]; then
+            IFS=',' read -ra ids <<< "${GRYPE_IGNORE}"
             {
               echo "ignore:"
-              while IFS= read -r id; do
+              for id in "${ids[@]}"; do
                 if [[ -n "${id}" ]]; then
                   printf '  - vulnerability: %s\n' "${id}"
                 fi
-              done <<< "${GRYPE_IGNORE}"
+              done
             } > "${RUNNER_TEMP}/.grype.yaml"
             args+=(--config /work/.grype.yaml)
           elif [[ -f "${GRYPE_CONFIG}" ]]; then

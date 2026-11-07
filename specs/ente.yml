@@ -11,9 +11,11 @@ builds:
     buildArgs:
       - GIT_COMMIT=5d8f32e39af89bd1c0edf3520dcf7da13294c885
     # Upstream server/Dockerfile runs as root and has no USER instruction.
-    # Remove this ignore when ente-io/ente adds a non-root runtime user.
+    # Remove these when ente-io/ente adds a non-root runtime user. Both the
+    # long and short forms are listed because Trivy accepts either alias.
     config_ignore:
       - AVD-DS-0002
+      - DS-0002
     # Upstream still pins golang.org/x/net v0.60.0; remove when it reaches
     # v0.62.0 (CVE-2026-78661 fixed in v0.62.0).
     image_ignore:
@@ -27,7 +29,10 @@ builds:
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     clean_runner: true
     # Upstream web/Dockerfile runs as root and omits --no-install-recommends.
-    # Remove these when ente-io/ente fixes the Dockerfile.
+    # Remove these when ente-io/ente fixes the Dockerfile. Both alias forms
+    # are listed for the same reason as above.
     config_ignore:
       - AVD-DS-0002
+      - DS-0002
       - AVD-DS-0029
+      - DS-0029
