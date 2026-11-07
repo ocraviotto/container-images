@@ -153,6 +153,7 @@ jobs:
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $build.name),
                 build_args: ($build.buildArgs // []),
                 config_ignore: ($build.config_ignore // []),
+                image_ignore: ($build.image_ignore // []),
                 clean_runner: (($build.clean_runner // false) | tostring)
               }' <(yq '.' "$SPEC_FILE"))
           done
@@ -204,6 +205,7 @@ jobs:
                 version: ($ENV.GIT_TAGS | split(",") | .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME),
                 config_ignore: [],
+                image_ignore: [],
                 clean_runner: "false"
               }' \
             )
@@ -313,6 +315,7 @@ jobs:
         env:
           VEX_FILE: ${{ matrix.build_context }}/openvex.json
           IGNORE_FILE: ${{ matrix.build_context }}/.trivyignore
+          IMAGE_IGNORE: ${{ join(matrix.image_ignore, '\n') }}
         run: |
           set -euo pipefail
 
@@ -332,8 +335,16 @@ jobs:
             args+=(--vex /work/openvex.json)
           fi
 
+          have_ignore=false
           if [[ -f "${IGNORE_FILE}" ]]; then
             cp "${IGNORE_FILE}" "${RUNNER_TEMP}/.trivyignore"
+            have_ignore=true
+          fi
+          if [[ -n "${IMAGE_IGNORE}" ]]; then
+            printf '%s\n' "${IMAGE_IGNORE}" >> "${RUNNER_TEMP}/.trivyignore"
+            have_ignore=true
+          fi
+          if [[ "${have_ignore}" == "true" ]]; then
             args+=(--ignorefile /work/.trivyignore)
           fi
 
