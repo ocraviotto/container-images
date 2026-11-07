@@ -154,6 +154,7 @@ jobs:
                 build_args: ($build.buildArgs // []),
                 config_ignore: ($build.config_ignore // []),
                 image_ignore: ($build.image_ignore // []),
+                grype_ignore: ($build.grype_ignore // []),
                 clean_runner: (($build.clean_runner // false) | tostring)
               }' <(yq '.' "$SPEC_FILE"))
           done
@@ -206,6 +207,7 @@ jobs:
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME),
                 config_ignore: [],
                 image_ignore: [],
+                grype_ignore: [],
                 clean_runner: "false"
               }' \
             )
@@ -369,8 +371,15 @@ jobs:
           )
 
           if [[ -n "${CONFIG_IGNORE}" ]]; then
-            printf '%s\n' "${CONFIG_IGNORE}" > "${RUNNER_TEMP}/trivy-config/.trivyignore"
-            args+=(--ignorefile /src/.trivyignore)
+            {
+              echo "misconfigurations:"
+              while IFS= read -r id; do
+                if [[ -n "${id}" ]]; then
+                  printf '  - id: %s\n' "${id}"
+                fi
+              done <<< "${CONFIG_IGNORE}"
+            } > "${RUNNER_TEMP}/trivy-config/.trivyignore.yaml"
+            args+=(--ignorefile /src/.trivyignore.yaml)
           fi
 
           docker run --rm \
@@ -382,6 +391,7 @@ jobs:
       - name: Scan image with Grype
         env:
           GRYPE_CONFIG: ${{ matrix.build_context }}/.grype.yaml
+          GRYPE_IGNORE: ${{ join(matrix.grype_ignore, '\n') }}
         run: |
           set -euo pipefail
 
@@ -391,7 +401,17 @@ jobs:
             --only-fixed
           )
 
-          if [[ -f "${GRYPE_CONFIG}" ]]; then
+          if [[ -n "${GRYPE_IGNORE}" ]]; then
+            {
+              echo "ignore:"
+              while IFS= read -r id; do
+                if [[ -n "${id}" ]]; then
+                  printf '  - vulnerability: %s\n' "${id}"
+                fi
+              done <<< "${GRYPE_IGNORE}"
+            } > "${RUNNER_TEMP}/.grype.yaml"
+            args+=(--config /work/.grype.yaml)
+          elif [[ -f "${GRYPE_CONFIG}" ]]; then
             cp "${GRYPE_CONFIG}" "${RUNNER_TEMP}/.grype.yaml"
             args+=(--config /work/.grype.yaml)
           fi
