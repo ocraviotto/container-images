@@ -68,6 +68,7 @@ install_bin opengrep \
   "${opengrep_asset}"
 
 python3 -m venv /opt/ci-actions/venv
+/opt/ci-actions/venv/bin/pip install --no-cache-dir --upgrade "pip==${PIP_VERSION}"
 /opt/ci-actions/venv/bin/pip install --no-cache-dir \
   "guarddog==${GUARDDOG_VERSION}" \
   "sarif-tools==${SARIF_TOOLS_VERSION}"
