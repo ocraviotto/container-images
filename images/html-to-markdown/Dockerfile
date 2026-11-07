@@ -14,9 +14,9 @@
 # is installed at a pinned version instead.
 
 # renovate: packageName=xberg-io/html-to-markdown datasource=github-releases
-ARG HTML_TO_MARKDOWN_VERSION=v3.20.0
+ARG HTML_TO_MARKDOWN_VERSION=v3.21.2
 
-FROM alpine:3.24.3 AS source
+FROM alpine:3.24.4 AS source
 ARG HTML_TO_MARKDOWN_VERSION
 RUN apk add --no-cache git
 WORKDIR /src
