@@ -36,8 +36,11 @@ ARG X_NET_VERSION=0.62.0
 ARG X_CRYPTO_VERSION=0.55.0
 ARG X_TEXT_VERSION=0.41.0
 ARG BROTLI_VERSION=1.2.7
-ARG COMPRESS_VERSION=1.20.2
-ARG XZ_VERSION=0.5.15
+# 1.20.3 and 0.5.17 are the versions Syft's dependency graph already selects;
+# using the lower fixed versions here makes `go get` downgrade Podman image
+# libraries and breaks the Syft build.
+ARG COMPRESS_VERSION=1.20.3
+ARG XZ_VERSION=0.5.17
 ARG CHI_VERSION=5.4.0
 ARG GO_JOSE_VERSION=4.1.6
 
