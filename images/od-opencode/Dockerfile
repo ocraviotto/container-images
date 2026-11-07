@@ -22,7 +22,10 @@ USER root
 # renovate: packageName=opencode-ai datasource=npm
 ARG OPENCODE_VERSION=1.18.31
 
+# The upstream base image can predate Alpine's zlib 1.4-r0 security update
+# (CVE-2026-4738). Pull the fixed package in explicitly.
 RUN apk add --no-cache libc6-compat bash \
+    && apk upgrade --no-cache zlib \
     && npm install --global --omit=dev "opencode-ai@${OPENCODE_VERSION}" \
     && test -x /usr/local/bin/opencode \
     && /usr/local/bin/opencode --version

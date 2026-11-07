@@ -87,3 +87,6 @@ ignore:
   - vulnerability: GO-2026-6611
   - vulnerability: GO-2026-6612
   - vulnerability: GO-2026-6617
+  # x/net/html DoS (CVE-2026-78661 / GO-2026-6860); see .trivyignore.
+  - vulnerability: CVE-2026-78661
+  - vulnerability: GO-2026-6860
