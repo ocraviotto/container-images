@@ -57,7 +57,7 @@ ENV ImageOS=ubuntu24
 # CVE-2026-109518 (fixed in 2.8.4ubuntu0.1).
 RUN apt update -y \
     && apt install -y --no-install-recommends sudo lsb-release gpg-agent software-properties-common curl jq unzip \
-    && apt-get install -y --only-upgrade apt libapt-pkg6.0t64 \
+    && apt-get install -y --no-install-recommends --only-upgrade apt libapt-pkg6.0t64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure git-core/ppa based on guidance here:  https://git-scm.com/download/linux
