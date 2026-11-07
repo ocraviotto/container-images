@@ -10,7 +10,16 @@ builds:
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     buildArgs:
       - GIT_COMMIT=5d8f32e39af89bd1c0edf3520dcf7da13294c885
+    # Upstream server/Dockerfile runs as root and has no USER instruction.
+    # Remove this ignore when ente-io/ente adds a non-root runtime user.
+    config_ignore:
+      - AVD-DS-0002
   - name: ente-web
     dockerfile: web/Dockerfile
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     clean_runner: true
+    # Upstream web/Dockerfile runs as root and omits --no-install-recommends.
+    # Remove these when ente-io/ente fixes the Dockerfile.
+    config_ignore:
+      - AVD-DS-0002
+      - AVD-DS-0029
