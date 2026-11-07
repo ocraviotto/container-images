@@ -10,9 +10,9 @@
 # ARGs through the repository's Dockerfile manager.
 
 # The Go tools are rebuilt from source with a current Go toolchain and patched
-# golang.org/x, klauspost/compress and go-jose modules. The upstream release
-# binaries at the same versions are built with older dependencies and fail
-# image scanning with fixable CVEs, so the release assets are not used here.
+# Go modules. The upstream release binaries at the same versions are built
+# with older dependencies and fail image scanning with fixable CVEs, so the
+# release assets are not used here.
 FROM --platform=$BUILDPLATFORM golang:1.27.3-bookworm AS go-tools
 
 ARG TARGETOS=linux
@@ -35,7 +35,10 @@ ARG SCORECARD_VERSION=5.6.0
 ARG X_NET_VERSION=0.62.0
 ARG X_CRYPTO_VERSION=0.55.0
 ARG X_TEXT_VERSION=0.41.0
-ARG COMPRESS_VERSION=1.18.7
+ARG BROTLI_VERSION=1.2.7
+ARG COMPRESS_VERSION=1.20.2
+ARG XZ_VERSION=0.5.15
+ARG CHI_VERSION=5.4.0
 ARG GO_JOSE_VERSION=4.1.6
 
 RUN set -eux; \
@@ -51,29 +54,51 @@ RUN set -eux; \
     go get \
       "golang.org/x/crypto@v${X_CRYPTO_VERSION}" \
       "golang.org/x/text@v${X_TEXT_VERSION}" \
-      "github.com/klauspost/compress@v${COMPRESS_VERSION}"; \
+      "github.com/andybalholm/brotli@v${BROTLI_VERSION}" \
+      "github.com/klauspost/compress@v${COMPRESS_VERSION}" \
+      "github.com/ulikunitz/xz@v${XZ_VERSION}" \
+      "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/gitleaks .; \
     \
     git clone --depth 1 --branch "v${COSIGN_VERSION}" https://github.com/sigstore/cosign /src/cosign; \
     cd /src/cosign; \
-    go get "golang.org/x/net@v${X_NET_VERSION}"; \
+    go get \
+      "golang.org/x/net@v${X_NET_VERSION}" \
+      "github.com/andybalholm/brotli@v${BROTLI_VERSION}" \
+      "github.com/klauspost/compress@v${COMPRESS_VERSION}" \
+      "github.com/ulikunitz/xz@v${XZ_VERSION}" \
+      "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/cosign ./cmd/cosign; \
     \
     git clone --depth 1 --branch "v${GRYPE_VERSION}" https://github.com/anchore/grype /src/grype; \
     cd /src/grype; \
-    go get "golang.org/x/net@v${X_NET_VERSION}"; \
+    go get \
+      "golang.org/x/net@v${X_NET_VERSION}" \
+      "github.com/andybalholm/brotli@v${BROTLI_VERSION}" \
+      "github.com/klauspost/compress@v${COMPRESS_VERSION}" \
+      "github.com/ulikunitz/xz@v${XZ_VERSION}" \
+      "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/grype ./cmd/grype; \
     \
     git clone --depth 1 --branch "v${SYFT_VERSION}" https://github.com/anchore/syft /src/syft; \
     cd /src/syft; \
-    go get "golang.org/x/net@v${X_NET_VERSION}"; \
+    go get \
+      "golang.org/x/net@v${X_NET_VERSION}" \
+      "github.com/andybalholm/brotli@v${BROTLI_VERSION}" \
+      "github.com/klauspost/compress@v${COMPRESS_VERSION}" \
+      "github.com/ulikunitz/xz@v${XZ_VERSION}" \
+      "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/syft ./cmd/syft; \
     \
     git clone --depth 1 --branch "v${SCORECARD_VERSION}" https://github.com/ossf/scorecard /src/scorecard; \
     cd /src/scorecard; \
     go get \
       "golang.org/x/net@v${X_NET_VERSION}" \
-      "github.com/go-jose/go-jose/v4@v${GO_JOSE_VERSION}"; \
+      "github.com/go-jose/go-jose/v4@v${GO_JOSE_VERSION}" \
+      "github.com/andybalholm/brotli@v${BROTLI_VERSION}" \
+      "github.com/klauspost/compress@v${COMPRESS_VERSION}" \
+      "github.com/ulikunitz/xz@v${XZ_VERSION}" \
+      "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/scorecard .
 
 FROM ubuntu:24.04
@@ -91,6 +116,7 @@ ARG OPENGREP_VERSION=1.33.1
 ARG GUARDDOG_VERSION=3.2.0
 # renovate: depName=sarif-tools datasource=pypi
 ARG SARIF_TOOLS_VERSION=3.0.5
+ARG PIP_VERSION=26.2.0
 
 ARG TARGETARCH
 
