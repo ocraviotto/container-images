@@ -39,3 +39,15 @@ CVE-2026-9496 exp:2027-01-31
 # Remove these when buildx ships a release built with the fixed versions.
 CVE-2026-17106 exp:2027-01-31
 CVE-2026-78669 exp:2027-01-31
+
+# CVE-2026-78661 (GO-2026-6860) is an O(n^2) denial of service in
+# golang.org/x/net/html, fixed in v0.62.0. Docker 29.9.3 still bundles
+# containerd/runc built with v0.58.0/v0.55.0, and buildx 0.38.2 still embeds
+# v0.59.0. None of these binaries parse HTML. Remove when the Docker static
+# package and buildx ship v0.62.0.
+CVE-2026-78661 exp:2027-01-31
+
+# github.com/klauspost/compress v1.20.0 is bundled by containerd 2.4.2 and
+# fixed in v1.20.2. Docker 29.9.3 ships an older containerd build. Remove
+# when the Docker static package refreshes containerd.
+GO-2026-6865 exp:2027-01-31

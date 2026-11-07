@@ -48,6 +48,11 @@ COPY --from=assets /assets/node_modules/@fontsource-variable/sora/LICENSE /usr/s
 COPY --from=assets /assets/node_modules/@fontsource-variable/exo-2/LICENSE /usr/share/nginx/html/fonts/OFL-Exo-2.txt
 COPY --from=assets /assets/node_modules/@fontsource/jetbrains-mono/LICENSE /usr/share/nginx/html/fonts/OFL-JetBrains-Mono.txt
 
+# The nginx base image can predate Alpine's zlib 1.4-r0 security update
+# (CVE-2026-4738). Pull the fixed package in explicitly.
+USER root
+RUN apk upgrade --no-cache zlib
+
 # The base image already runs as an unprivileged user; make it explicit so
 # Dockerfile config scans can see the runtime user.
 USER nginx

@@ -53,8 +53,11 @@ ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 ENV ImageOS=ubuntu24
 
 # 'gpg-agent' and 'software-properties-common' are needed for the 'add-apt-repository' command that follows
+# Upgrade apt itself: the runtime-deps image ships 2.8.3, which is affected by
+# CVE-2026-109518 (fixed in 2.8.4ubuntu0.1).
 RUN apt update -y \
     && apt install -y --no-install-recommends sudo lsb-release gpg-agent software-properties-common curl jq unzip \
+    && apt-get install -y --no-install-recommends --only-upgrade apt libapt-pkg6.0t64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure git-core/ppa based on guidance here:  https://git-scm.com/download/linux

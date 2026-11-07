@@ -36,3 +36,12 @@ builds:
       - DS-0002
       - AVD-DS-0029
       - DS-0029
+    # Upstream uses the floating `nginx` tag, which currently predates
+    # Debian's zlib1g security update (1:1.3.dfsg+really1.3.1-1+deb13u1).
+    # Remove when the upstream nginx image is rebuilt with the fixed package.
+    image_ignore:
+      - CVE-2026-76844
+      - CVE-2026-85091
+    grype_ignore:
+      - CVE-2026-76844
+      - CVE-2026-85091
