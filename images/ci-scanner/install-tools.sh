@@ -79,5 +79,23 @@ python3 -m venv /opt/ci-actions/venv
   "msgpack==${MSGPACK_VERSION}" \
   "setuptools==${SETUPTOOLS_VERSION}" \
   "urllib3==${URLLIB3_VERSION}"
+
+# pip, setuptools and wheel are install-time tools. Their vendored copies are
+# still reported as vulnerable packages by image scanners, and the runtime
+# only needs the console scripts and their libraries, so drop them.
+/opt/ci-actions/venv/bin/pip uninstall -y pip setuptools wheel || true
+rm -rf /opt/ci-actions/venv/lib/python*/site-packages/pip \
+       /opt/ci-actions/venv/lib/python*/site-packages/pip-*.dist-info \
+       /opt/ci-actions/venv/lib/python*/site-packages/setuptools \
+       /opt/ci-actions/venv/lib/python*/site-packages/setuptools-*.dist-info \
+       /opt/ci-actions/venv/lib/python*/site-packages/wheel \
+       /opt/ci-actions/venv/lib/python*/site-packages/wheel-*.dist-info \
+       /opt/ci-actions/venv/lib/python*/site-packages/pkg_resources \
+       /opt/ci-actions/venv/lib/python*/site-packages/pkg_resources-*.dist-info
+rm -f /opt/ci-actions/venv/bin/pip /opt/ci-actions/venv/bin/pip3 /opt/ci-actions/venv/bin/pip3.*
+
 ln -sf /opt/ci-actions/venv/bin/guarddog /opt/ci-actions/bin/guarddog
 ln -sf /opt/ci-actions/venv/bin/sarif /opt/ci-actions/bin/sarif
+
+guarddog --version >/dev/null
+sarif --version >/dev/null
