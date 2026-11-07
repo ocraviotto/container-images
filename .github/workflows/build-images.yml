@@ -152,6 +152,9 @@ jobs:
                   .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $build.name),
                 build_args: ($build.buildArgs // []),
+                config_ignore: ($build.config_ignore // []),
+                image_ignore: ($build.image_ignore // []),
+                grype_ignore: ($build.grype_ignore // []),
                 clean_runner: (($build.clean_runner // false) | tostring)
               }' <(yq '.' "$SPEC_FILE"))
           done
@@ -202,6 +205,9 @@ jobs:
                 image_tags: ($ENV.GIT_TAGS | split(",") | map($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME + ":" + .)),
                 version: ($ENV.GIT_TAGS | split(",") | .[0]),
                 image: ($ENV.IMAGE_REPO_PREFIX + "/" + $ENV.IMAGE_NAME),
+                config_ignore: [],
+                image_ignore: [],
+                grype_ignore: [],
                 clean_runner: "false"
               }' \
             )
@@ -311,6 +317,7 @@ jobs:
         env:
           VEX_FILE: ${{ matrix.build_context }}/openvex.json
           IGNORE_FILE: ${{ matrix.build_context }}/.trivyignore
+          IMAGE_IGNORE: ${{ join(matrix.image_ignore, ',') }}
         run: |
           set -euo pipefail
 
@@ -330,8 +337,21 @@ jobs:
             args+=(--vex /work/openvex.json)
           fi
 
+          have_ignore=false
           if [[ -f "${IGNORE_FILE}" ]]; then
             cp "${IGNORE_FILE}" "${RUNNER_TEMP}/.trivyignore"
+            have_ignore=true
+          fi
+          if [[ -n "${IMAGE_IGNORE}" ]]; then
+            IFS=',' read -ra ids <<< "${IMAGE_IGNORE}"
+            for id in "${ids[@]}"; do
+              if [[ -n "${id}" ]]; then
+                printf '%s\n' "${id}" >> "${RUNNER_TEMP}/.trivyignore"
+              fi
+            done
+            have_ignore=true
+          fi
+          if [[ "${have_ignore}" == "true" ]]; then
             args+=(--ignorefile /work/.trivyignore)
           fi
 
@@ -341,20 +361,43 @@ jobs:
             "${args[@]}"
 
       - name: Scan Dockerfile config with Trivy
+        env:
+          CONFIG_IGNORE: ${{ join(matrix.config_ignore, ',') }}
         run: |
+          set -euo pipefail
+
           mkdir -p "${RUNNER_TEMP}/trivy-config"
           cp "${{ matrix.dockerfile_path }}" "${RUNNER_TEMP}/trivy-config/Dockerfile"
+
+          args=(
+            config
+            --exit-code 1
+            --severity HIGH,CRITICAL
+          )
+
+          if [[ -n "${CONFIG_IGNORE}" ]]; then
+            IFS=',' read -ra ids <<< "${CONFIG_IGNORE}"
+            {
+              echo "misconfigurations:"
+              for id in "${ids[@]}"; do
+                if [[ -n "${id}" ]]; then
+                  printf '  - id: %s\n' "${id}"
+                fi
+              done
+            } > "${RUNNER_TEMP}/trivy-config/.trivyignore.yaml"
+            args+=(--ignorefile /src/.trivyignore.yaml)
+          fi
+
           docker run --rm \
             --volume "${RUNNER_TEMP}/trivy-config:/src:ro" \
             "${TRIVY_IMAGE}" \
-            config \
-            --exit-code 1 \
-            --severity HIGH,CRITICAL \
+            "${args[@]}" \
             /src
 
       - name: Scan image with Grype
         env:
           GRYPE_CONFIG: ${{ matrix.build_context }}/.grype.yaml
+          GRYPE_IGNORE: ${{ join(matrix.grype_ignore, ',') }}
         run: |
           set -euo pipefail
 
@@ -364,7 +407,18 @@ jobs:
             --only-fixed
           )
 
-          if [[ -f "${GRYPE_CONFIG}" ]]; then
+          if [[ -n "${GRYPE_IGNORE}" ]]; then
+            IFS=',' read -ra ids <<< "${GRYPE_IGNORE}"
+            {
+              echo "ignore:"
+              for id in "${ids[@]}"; do
+                if [[ -n "${id}" ]]; then
+                  printf '  - vulnerability: %s\n' "${id}"
+                fi
+              done
+            } > "${RUNNER_TEMP}/.grype.yaml"
+            args+=(--config /work/.grype.yaml)
+          elif [[ -f "${GRYPE_CONFIG}" ]]; then
             cp "${GRYPE_CONFIG}" "${RUNNER_TEMP}/.grype.yaml"
             args+=(--config /work/.grype.yaml)
           fi
