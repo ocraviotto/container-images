@@ -72,5 +72,12 @@ python3 -m venv /opt/ci-actions/venv
 /opt/ci-actions/venv/bin/pip install --no-cache-dir \
   "guarddog==${GUARDDOG_VERSION}" \
   "sarif-tools==${SARIF_TOOLS_VERSION}"
+# GuardDog's dependency tree still resolves older versions of these packages;
+# upgrade them to the fixed releases after the install.
+/opt/ci-actions/venv/bin/pip install --no-cache-dir --upgrade \
+  "certifi==${CERTIFI_VERSION}" \
+  "msgpack==${MSGPACK_VERSION}" \
+  "setuptools==${SETUPTOOLS_VERSION}" \
+  "urllib3==${URLLIB3_VERSION}"
 ln -sf /opt/ci-actions/venv/bin/guarddog /opt/ci-actions/bin/guarddog
 ln -sf /opt/ci-actions/venv/bin/sarif /opt/ci-actions/bin/sarif
