@@ -116,7 +116,7 @@ RUN set -eux; \
 # dependency tree stay out of the runtime image.
 FROM node:24-bookworm-slim AS node
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
