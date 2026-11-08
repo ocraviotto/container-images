@@ -14,7 +14,7 @@
 # is installed at a pinned version instead.
 
 # renovate: packageName=xberg-io/html-to-markdown datasource=github-releases
-ARG HTML_TO_MARKDOWN_VERSION=v3.21.2
+ARG HTML_TO_MARKDOWN_VERSION=v3.22.0
 
 FROM alpine:3.24.4 AS source
 ARG HTML_TO_MARKDOWN_VERSION
