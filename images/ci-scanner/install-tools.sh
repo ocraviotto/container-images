@@ -21,7 +21,9 @@ mkdir -p /opt/ci-actions/bin
 
 fetch() {
   local url="$1" dest="$2"
-  curl --fail --silent --show-error --location --retry 3 --output "$dest" "$url"
+  curl --fail --silent --show-error --location \
+    --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 300 \
+    --connect-timeout 20 --output "$dest" "$url"
 }
 
 # Opengrep publishes per-asset SHA-256 metadata in the GitHub API but no
