@@ -23,6 +23,9 @@ container-based runner. Pin it by digest in production.
 
 All tools are on `PATH` under `/opt/ci-actions/bin`.
 
+The image also includes Node.js 24 for JavaScript-based CI actions such as
+`actions/checkout` and the artifact actions. npm is deliberately not included.
+
 ## Usage
 
 GitHub Actions:
@@ -73,4 +76,6 @@ directory and pass it to the scanner.
   `/opt/ci-actions/venv`. `pip`, `setuptools` and `wheel` are removed after
   the install so their vendored copies are not shipped; `guarddog` and
   `sarif` are symlinked into `/opt/ci-actions/bin`.
+- Node.js is copied from the official `node:24-bookworm-slim` image. Only the
+  `node` binary is included, so npm's bundled dependency tree is not shipped.
 - No `.trivyignore` or `.grype.yaml` is used; the image scan is clean.
