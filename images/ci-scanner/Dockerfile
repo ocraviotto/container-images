@@ -111,6 +111,11 @@ RUN set -eux; \
       "github.com/go-chi/chi/v5@v${CHI_VERSION}"; \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/scorecard .
 
+# Node.js is required by JavaScript-based actions such as actions/checkout and
+# the artifact actions. Only the node binary is copied; npm and its bundled
+# dependency tree stay out of the runtime image.
+FROM node:24-bookworm-slim AS node
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -144,8 +149,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=go-tools /out/ /opt/ci-actions/bin/
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY install-tools.sh /usr/local/bin/install-tools
-RUN chmod 0755 /usr/local/bin/install-tools \
+RUN node --version \
+    && chmod 0755 /usr/local/bin/install-tools \
     && install-tools
 
 # Run unprivileged. The workspace and home directory are the only writable
