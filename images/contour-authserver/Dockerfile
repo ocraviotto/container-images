@@ -23,7 +23,7 @@ ARG CONTOUR_AUTHSERVER_VERSION=5ea919dd5cea8539865915f59c8d7b0e0dbe3684
 # Hold the builder to the Go 1.26 line: upstream targets Go 1.25 and this image
 # is validated on 1.26. Renovate still bumps 1.26 patch releases; moving to a
 # newer minor is deliberate (see the golang packageRule in renovate.json).
-FROM golang:1.26.10 AS builder
+FROM golang:1.26.11 AS builder
 
 ARG CONTOUR_AUTHSERVER_VERSION
 ARG TARGETARCH

@@ -14,9 +14,9 @@
 # production image (`next build` + `next start`) without pruning the PWA
 # plugin. See images/gptr-nextjs/README.md for details.
 
-FROM node:24.22.2-alpine AS builder
+FROM node:24.22.3-alpine AS builder
 # renovate: packageName=assafelovic/gpt-researcher
-ARG GPTR_VERSION=v3.7.0
+ARG GPTR_VERSION=v3.8.0
 RUN apk add --no-cache git
 WORKDIR /app
 RUN git clone --depth 1 --branch ${GPTR_VERSION} https://github.com/assafelovic/gpt-researcher.git .
@@ -30,7 +30,7 @@ RUN npm config set fetch-retries 5 \
         || npm install --legacy-peer-deps --no-audit --no-fund)
 RUN npm run build
 
-FROM node:24.22.2-alpine AS runner
+FROM node:24.22.3-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/frontend/nextjs/package.json ./
