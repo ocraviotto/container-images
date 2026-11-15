@@ -14,7 +14,7 @@
 # writable emptyDir at /home/open-design for OpenCode state.
 
 # renovate: packageName=ghcr.io/nexu-io/od datasource=docker
-ARG OD_VERSION=0.27.0
+ARG OD_VERSION=0.27.1
 FROM ghcr.io/nexu-io/od:${OD_VERSION}
 
 USER root
@@ -23,9 +23,11 @@ USER root
 ARG OPENCODE_VERSION=1.18.31
 
 # The upstream base image can predate Alpine's zlib 1.4-r0 security update
-# (CVE-2026-4738). Pull the fixed package in explicitly.
+# (CVE-2026-4738). Pull the fixed package in explicitly. git is also upgraded:
+# the base image still ships 2.54.0-r0, which has three fixable HIGH CVEs
+# (CVE-2026-105437, CVE-2026-111760, CVE-2026-114466).
 RUN apk add --no-cache libc6-compat bash \
-    && apk upgrade --no-cache zlib \
+    && apk upgrade --no-cache zlib git \
     && npm install --global --omit=dev "opencode-ai@${OPENCODE_VERSION}" \
     && test -x /usr/local/bin/opencode \
     && /usr/local/bin/opencode --version

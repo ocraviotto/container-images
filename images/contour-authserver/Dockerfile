@@ -23,7 +23,7 @@ ARG CONTOUR_AUTHSERVER_VERSION=5ea919dd5cea8539865915f59c8d7b0e0dbe3684
 # Hold the builder to the Go 1.26 line: upstream targets Go 1.25 and this image
 # is validated on 1.26. Renovate still bumps 1.26 patch releases; moving to a
 # newer minor is deliberate (see the golang packageRule in renovate.json).
-FROM golang:1.26.10 AS builder
+FROM golang:1.26.11 AS builder
 
 ARG CONTOUR_AUTHSERVER_VERSION
 ARG TARGETARCH
@@ -42,6 +42,18 @@ RUN git clone https://github.com/projectcontour/contour-authserver.git . \
 COPY oidc-session.patch /tmp/oidc-session.patch
 RUN git apply --check /tmp/oidc-session.patch \
     && git apply /tmp/oidc-session.patch
+
+# The pinned upstream commit still carries Go modules with fixable CVEs.
+# Bump them explicitly so the image builds against patched versions without
+# waiting for an upstream go.mod refresh; `make build` then uses these.
+RUN set -eux; \
+    go get \
+      github.com/go-jose/go-jose/v4@v4.1.6 \
+      golang.org/x/crypto@v0.55.0 \
+      golang.org/x/net@v0.62.0 \
+      golang.org/x/text@v0.41.0 \
+      google.golang.org/grpc@v1.83.2; \
+    go mod tidy
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" make build
 
