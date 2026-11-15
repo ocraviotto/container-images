@@ -29,7 +29,7 @@ WORKDIR /app/frontend/nextjs
 #
 # Overrides: undici is a runtime dependency; postcss is pinned by Next and is
 # also a direct devDependency (so it is overridden under next).
-# serialize-javascript comes in through workbox/PWA and must be >= 7.0.3.
+# serialize-javascript comes in through workbox/PWA and must be >= 7.1.3.
 #
 # @ducanh2912/next-pwa moves to dependencies: next.config.mjs imports it at
 # startup, so it must survive the production prune below.
@@ -44,9 +44,9 @@ RUN node -e ' \
     } \
     p.overrides = Object.assign({}, p.overrides, { \
       undici: "6.29.1", \
-      "serialize-javascript": "7.0.3", \
+      "serialize-javascript": "7.1.3", \
     }); \
-    p.overrides.next = Object.assign({}, p.overrides.next, { postcss: "8.5.18" }); \
+    p.overrides.next = Object.assign({}, p.overrides.next, { postcss: "8.5.23" }); \
     fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n"); \
   '
 
@@ -77,10 +77,11 @@ COPY --from=builder /app/frontend/nextjs/public ./public
 COPY --from=builder /app/frontend/nextjs/.next ./.next
 COPY --from=builder /app/frontend/nextjs/node_modules ./node_modules
 
-# npm/npx are only needed to install and build. The runtime starts Next
-# directly, so remove the npm CLI and its bundled dependency tree instead of
-# shipping and scanning it.
-RUN rm -rf /usr/local/lib/node_modules/npm \
+# The Alpine base can predate zlib 1.4-r0 (CVE-2026-4738). Pull the fix in,
+# remove the npm CLI (only needed to install/build, and it bundles its own
+# dependency tree), and give the app tree to the non-root node user.
+RUN apk upgrade --no-cache zlib \
+    && rm -rf /usr/local/lib/node_modules/npm \
     /usr/local/bin/npm /usr/local/bin/npx \
     && chown -R node:node /app
 

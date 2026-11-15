@@ -1,0 +1,4 @@
+# GHSA-mrhx-c7xc-m3w5 / CVE-2023-54404: see .grype.yaml. Trivy 0.76.1 does
+# not currently surface this finding, but keep the scanners consistent.
+GHSA-mrhx-c7xc-m3w5 exp:2027-01-31
+CVE-2023-54404 exp:2027-01-31
