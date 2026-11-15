@@ -14,13 +14,38 @@
 # production image (`next build` + `next start`) without pruning the PWA
 # plugin. See images/gptr-nextjs/README.md for details.
 
-FROM node:24.22.2-alpine AS builder
+FROM node:24.22.3-alpine AS builder
 # renovate: packageName=assafelovic/gpt-researcher
-ARG GPTR_VERSION=v3.7.0
+ARG GPTR_VERSION=v3.8.0
 RUN apk add --no-cache git
 WORKDIR /app
 RUN git clone --depth 1 --branch ${GPTR_VERSION} https://github.com/assafelovic/gpt-researcher.git .
 WORKDIR /app/frontend/nextjs
+
+# Next.js 14 is EOL and has unpatched image-optimizer RCEs. 15.5.28 is the
+# first 15.5.x release that fixes both GHSA-2xp9 and GHSA-2464. The App Router
+# needs the React 19 line. postcss and undici are overridden because Next pins
+# postcss 8.4.31 and the app resolves an old undici 6.x.
+#
+# @ducanh2912/next-pwa moves to dependencies: next.config.mjs imports it at
+# startup, so it must survive the production prune below.
+RUN node -e ' \
+    const fs = require("fs"); \
+    const p = JSON.parse(fs.readFileSync("package.json", "utf8")); \
+    p.dependencies.next = "15.5.28"; \
+    p.dependencies.react = "^19.1.0"; \
+    p.dependencies["react-dom"] = "^19.1.0"; \
+    p.dependencies["@ducanh2912/next-pwa"] = (p.devDependencies && p.devDependencies["@ducanh2912/next-pwa"]) || "^10.0.1"; \
+    if (p.devDependencies) { \
+      delete p.devDependencies["@ducanh2912/next-pwa"]; \
+      p.devDependencies["eslint-config-next"] = "15.5.28"; \
+      p.devDependencies["@types/react"] = "^19"; \
+      p.devDependencies["@types/react-dom"] = "^19"; \
+    } \
+    p.overrides = Object.assign({}, p.overrides, { postcss: "8.5.18", undici: "6.29.1" }); \
+    fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n"); \
+  '
+
 RUN npm config set fetch-retries 5 \
     && npm config set fetch-retry-mintimeout 20000 \
     && npm config set fetch-retry-maxtimeout 120000 \
@@ -30,7 +55,11 @@ RUN npm config set fetch-retries 5 \
         || npm install --legacy-peer-deps --no-audit --no-fund)
 RUN npm run build
 
-FROM node:24.22.2-alpine AS runner
+# Drop build-only dependencies (rollup, terser, linters). The PWA plugin is a
+# production dependency now, so next.config.mjs still loads at startup.
+RUN npm prune --omit=dev
+
+FROM node:24.22.3-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/frontend/nextjs/package.json ./
