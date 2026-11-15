@@ -51,3 +51,11 @@ CVE-2026-78661 exp:2027-01-31
 # fixed in v1.20.2. Docker 29.9.3 ships an older containerd build. Remove
 # when the Docker static package refreshes containerd.
 GO-2026-6865 exp:2027-01-31
+
+# CVE-2026-114149 / GHSA-x33c-w48q-qrgc: ASP.NET Core DoS in
+# Microsoft.AspNetCore.WebUtilities 8.0.25, bundled by actions/runner 2.338.2
+# (the current upstream release). The runner is a CI agent, not an ASP.NET
+# service; WebUtilities is not exposed to network input. Remove when
+# actions/runner refreshes its bundled .NET runtime past 8.0.33.
+CVE-2026-114149 exp:2027-01-31
+GHSA-x33c-w48q-qrgc exp:2027-01-31
