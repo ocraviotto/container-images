@@ -73,5 +73,11 @@ COPY --from=builder /app/frontend/nextjs/next.config.mjs ./
 COPY --from=builder /app/frontend/nextjs/public ./public
 COPY --from=builder /app/frontend/nextjs/.next ./.next
 COPY --from=builder /app/frontend/nextjs/node_modules ./node_modules
+
+# npm/npx are only needed to install and build. The runtime starts Next
+# directly, so remove the npm CLI and its bundled dependency tree instead of
+# shipping and scanning it.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    /usr/local/bin/npm /usr/local/bin/npx
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node_modules/.bin/next", "start"]
