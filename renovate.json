@@ -4,6 +4,7 @@
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  "separateMinorPatch": true,
   "customManagers": [
     {
       "customType": "regex",
@@ -187,6 +188,28 @@
       "groupName": "Github Actions Dependencies (non-major)"
     },
     {
+      "description": "One PR per image so a failing image cannot block unrelated image rebuilds.",
+      "matchFileNames": [
+        "images/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "{{parentDir}} (non-major)"
+    },
+    {
+      "description": "One PR per spec so a failing external build cannot block unrelated builds.",
+      "matchFileNames": [
+        "specs/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "{{packageFile}} (non-major)"
+    },
+    {
       "matchFileNames": [
         "/^specs/ente.yml$/"
       ],
@@ -196,17 +219,6 @@
         "digest"
       ],
       "groupName": "Ente (automatic)"
-    },
-    {
-      "matchFileNames": [
-        "images/**",
-        "specs/**"
-      ],
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
-      "groupName": "Build Updates (non-major)"
     },
     {
       "description": "mem0 v2.2.1 pins pydantic==2.10.4 -> pydantic-core 2.27.2 (pyo3 0.22), which has no Python 3.14/3.15 wheels and cannot compile on newer interpreters; hold the 3.13 line until mem0 relaxes the pin.",
