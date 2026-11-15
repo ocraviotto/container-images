@@ -44,15 +44,13 @@ RUN git apply --check /tmp/oidc-session.patch \
     && git apply /tmp/oidc-session.patch
 
 # The pinned upstream commit still carries Go modules with fixable CVEs.
-# Bump them explicitly so the image builds against patched versions without
-# waiting for an upstream go.mod refresh; `make build` then uses these.
-# x/net 0.62 requires x/crypto >= 0.58, so let that be the floor.
+# Bump x/net, gRPC and go-jose explicitly; x/net's own requirements pull the
+# fixed x/crypto and x/text versions (specifying them here would risk pinning
+# below its minimum). `make build` then uses these.
 RUN set -eux; \
     go get \
       github.com/go-jose/go-jose/v4@v4.1.6 \
-      golang.org/x/crypto@v0.58.0 \
       golang.org/x/net@v0.62.0 \
-      golang.org/x/text@v0.41.0 \
       google.golang.org/grpc@v1.83.2; \
     go mod tidy
 
