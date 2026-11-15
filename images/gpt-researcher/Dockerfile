@@ -54,6 +54,9 @@ RUN pip install --upgrade pip 'setuptools>=78.1.1' \
     && pip install --no-cache-dir -r multi_agents/requirements.txt --upgrade --prefer-binary \
     && pip install --no-cache-dir --upgrade 'unstructured>=0.24.1' 'setuptools>=78.1.1'
 
+# Fail the build if a later dependency downgraded setuptools again.
+RUN python -c "import setuptools; assert setuptools.__version__ >= '78.1.1', setuptools.__version__"
+
 # Stage 3: Final stage with non-root user and app
 FROM gpt-researcher-install AS gpt-researcher
 

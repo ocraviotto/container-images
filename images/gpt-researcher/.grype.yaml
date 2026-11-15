@@ -1,0 +1,5 @@
+# CVE-2025-47273: see .trivyignore. The final image has setuptools 84.2.1;
+# Grype may report the same stale base-layer artifact.
+ignore:
+  - vulnerability: CVE-2025-47273
+  - vulnerability: GHSA-5rjg-fvgr-3xxf
