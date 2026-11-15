@@ -48,6 +48,11 @@ RUN node -e ' \
     fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n"); \
   '
 
+# Next 15 made params/searchParams async. The upstream source targets Next 14,
+# so run the official migration codemod instead of turning off type checking.
+# The codemod rewrites page/route entries and flags anything it cannot fix.
+RUN npx --yes @next/codemod@latest next-async-request-api . --force
+
 RUN npm config set fetch-retries 5 \
     && npm config set fetch-retry-mintimeout 20000 \
     && npm config set fetch-retry-maxtimeout 120000 \
