@@ -124,7 +124,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/scanner
 
 # renovate: depName=opengrep/opengrep
-ARG OPENGREP_VERSION=1.33.1
+ARG OPENGREP_VERSION=2.0.0
 # renovate: depName=guarddog datasource=pypi
 ARG GUARDDOG_VERSION=3.2.0
 # renovate: depName=sarif-tools datasource=pypi

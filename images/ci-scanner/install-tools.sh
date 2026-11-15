@@ -4,10 +4,10 @@ set -euxo pipefail
 : "${TARGETARCH:?}"
 case "$TARGETARCH" in
   amd64)
-    opengrep_asset=opengrep_manylinux_x86
+    opengrep_asset=opengrep_linux_x86
     ;;
   arm64)
-    opengrep_asset=opengrep_manylinux_aarch64
+    opengrep_asset=opengrep_linux_aarch64
     ;;
   *)
     echo "unsupported TARGETARCH: $TARGETARCH" >&2
