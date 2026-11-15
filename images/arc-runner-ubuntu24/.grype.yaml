@@ -93,6 +93,7 @@ ignore:
   # klauspost/compress in containerd bundled by the Docker static package;
   # see .trivyignore.
   - vulnerability: GO-2026-6865
-  # CVE-2026-114149: ASP.NET Core DoS in actions/runner 2.338.2's bundled
-  # .NET runtime; see .trivyignore.
+  # CVE-2026-114149 / GHSA-x33c-w48q-qrgc: ASP.NET Core DoS in
+  # actions/runner 2.338.2's bundled .NET runtime; see .trivyignore.
   - vulnerability: CVE-2026-114149
+  - vulnerability: GHSA-x33c-w48q-qrgc
