@@ -27,9 +27,9 @@ WORKDIR /app/frontend/nextjs
 # the app's existing 18 line: Next 15.5.28's peer range supports React 18.2+,
 # so forcing React 19 would add unrelated type/runtime breakage.
 #
-# undici is overridden directly; postcss is overridden under next because the
-# app also declares postcss as a direct devDependency and npm rejects a
-# top-level override for it.
+# Overrides: undici is a runtime dependency; postcss is pinned by Next and is
+# also a direct devDependency (so it is overridden under next).
+# serialize-javascript comes in through workbox/PWA and must be >= 7.0.3.
 #
 # @ducanh2912/next-pwa moves to dependencies: next.config.mjs imports it at
 # startup, so it must survive the production prune below.
@@ -42,7 +42,10 @@ RUN node -e ' \
       delete p.devDependencies["@ducanh2912/next-pwa"]; \
       p.devDependencies["eslint-config-next"] = "15.5.28"; \
     } \
-    p.overrides = Object.assign({}, p.overrides, { undici: "6.29.1" }); \
+    p.overrides = Object.assign({}, p.overrides, { \
+      undici: "6.29.1", \
+      "serialize-javascript": "7.0.3", \
+    }); \
     p.overrides.next = Object.assign({}, p.overrides.next, { postcss: "8.5.18" }); \
     fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n"); \
   '
