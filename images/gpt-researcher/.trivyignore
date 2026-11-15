@@ -1,0 +1,7 @@
+# CVE-2025-47273: setuptools PackageIndex.download path traversal.
+# The final image ships setuptools 84.2.1 (verified by the build-time
+# assertion in the Dockerfile and by the package list in the scan), but
+# Trivy 0.76.1 still reports a 70.3.0 artifact from the Python base layer.
+# Even if 70.3.0 were present, PackageIndex is not used at runtime. Remove
+# when the scanner is bumped past 0.76.1 and no longer emits the stale row.
+CVE-2025-47273 exp:2027-01-31

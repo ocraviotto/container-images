@@ -1,0 +1,2 @@
+# renovate: datasource=github-releases packageName=assafelovic/gpt-researcher
+GPTR_VERSION=v3.8.0
