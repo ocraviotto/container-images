@@ -81,6 +81,12 @@ COPY --from=builder /app/frontend/nextjs/node_modules ./node_modules
 # directly, so remove the npm CLI and its bundled dependency tree instead of
 # shipping and scanning it.
 RUN rm -rf /usr/local/lib/node_modules/npm \
-    /usr/local/bin/npm /usr/local/bin/npx
+    /usr/local/bin/npm /usr/local/bin/npx \
+    && chown -R node:node /app
+
+# Next writes image-optimization/cache data under .next at runtime, so the
+# app must own its tree. The node image already provides the uid-1000 user.
+USER node
+
 EXPOSE 3000
 CMD ["node_modules/.bin/next", "start"]
