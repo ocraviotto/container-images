@@ -6,10 +6,10 @@ builds:
     context: server
     dockerfile: server/Dockerfile
     # curl -s https://api.ente.io/ping | jq '.id'
-    ref: 5d8f32e39af89bd1c0edf3520dcf7da13294c885 # ente-commit
+    ref: c2e571c599222ef6f8349dcc638bf23e0d885e21 # ente-commit
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
     buildArgs:
-      - GIT_COMMIT=5d8f32e39af89bd1c0edf3520dcf7da13294c885
+      - GIT_COMMIT=c2e571c599222ef6f8349dcc638bf23e0d885e21
     # Upstream server/Dockerfile runs as root and has no USER instruction.
     # Remove these when ente-io/ente adds a non-root runtime user. Both the
     # long and short forms are listed because Trivy accepts either alias.
