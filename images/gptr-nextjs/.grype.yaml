@@ -1,0 +1,9 @@
+# GHSA-mrhx-c7xc-m3w5 / CVE-2023-54404: zod memory-exhaustion DoS when
+# validating oversized constrained collections. The Next runtime does not
+# use zod for request validation: the API routes proxy JSON and the event
+# parser is hand-written. The fixed release is zod 4.6.6, a major upgrade
+# that would break zod-to-json-schema 3.x; revisit when the app moves to
+# zod 4 or drops the dependency.
+ignore:
+  - vulnerability: GHSA-mrhx-c7xc-m3w5
+  - vulnerability: CVE-2023-54404
