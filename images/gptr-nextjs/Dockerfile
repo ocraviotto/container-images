@@ -24,8 +24,9 @@ WORKDIR /app/frontend/nextjs
 
 # Next.js 14 is EOL and has unpatched image-optimizer RCEs. 15.5.28 is the
 # first 15.5.x release that fixes both GHSA-2xp9 and GHSA-2464. The App Router
-# needs the React 19 line. postcss and undici are overridden because Next pins
-# postcss 8.4.31 and the app resolves an old undici 6.x.
+# needs the React 19 line. undici is overridden directly; postcss is
+# overridden under next because the app also declares postcss as a direct
+# devDependency and npm rejects a top-level override for it.
 #
 # @ducanh2912/next-pwa moves to dependencies: next.config.mjs imports it at
 # startup, so it must survive the production prune below.
@@ -42,7 +43,8 @@ RUN node -e ' \
       p.devDependencies["@types/react"] = "^19"; \
       p.devDependencies["@types/react-dom"] = "^19"; \
     } \
-    p.overrides = Object.assign({}, p.overrides, { postcss: "8.5.18", undici: "6.29.1" }); \
+    p.overrides = Object.assign({}, p.overrides, { undici: "6.29.1" }); \
+    p.overrides.next = Object.assign({}, p.overrides.next, { postcss: "8.5.18" }); \
     fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n"); \
   '
 
