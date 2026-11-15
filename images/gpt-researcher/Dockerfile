@@ -78,4 +78,8 @@ USER gpt-researcher
 WORKDIR /usr/src/app
 
 COPY --chown=gpt-researcher:gpt-researcher --from=source /src/ ./
-CMD uvicorn main:app --host ${HOST} --port ${PORT} --workers ${WORKERS}
+
+# Exec form keeps the Dockerfile lint happy and lets uvicorn receive signals
+# directly; the shell is only used to expand the runtime-configurable HOST,
+# PORT and WORKERS values, then exec replaces it with uvicorn as PID 1.
+CMD ["sh", "-c", "exec uvicorn main:app --host ${HOST} --port ${PORT} --workers ${WORKERS}"]
