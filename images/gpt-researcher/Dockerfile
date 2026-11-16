@@ -11,7 +11,7 @@
 
 ARG GPTR_VERSION=v3.8.0
 
-FROM python:3.13-slim-bookworm AS source
+FROM python:3.15-slim-bookworm AS source
 ARG GPTR_VERSION
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
@@ -19,7 +19,7 @@ RUN apt-get update \
 RUN git clone --depth 1 --branch "${GPTR_VERSION}" https://github.com/assafelovic/gpt-researcher.git /src
 
 # Stage 1: Browser and build tools installation
-FROM python:3.13-slim-bookworm AS install-browser
+FROM python:3.15-slim-bookworm AS install-browser
 
 RUN apt-get update \
     && apt-get install -y gnupg wget ca-certificates --no-install-recommends \
