@@ -7,10 +7,15 @@
 #   - force setuptools >= 78.1.1 for CVE-2025-47273;
 #   - keep the upstream browser tooling and runtime layout unchanged.
 #
-# Renovate updates GPTR_VERSION below and in .version.
+# Renovate updates GPTR_VERSION below and in .version. The Python line is
+# constrained by the gpt-researcher packageRule in renovate.json; update the
+# Dockerfile and that rule together.
 
 ARG GPTR_VERSION=v3.8.0
 
+# Held to the Python 3.13 line: unstructured >=0.24.1 (the fix for
+# GHSA-4mvj-m6j5-pmf7) declares requires-python <3.14. Renovate enforces the
+# same line via the gpt-researcher packageRule in renovate.json.
 FROM python:3.13-slim-bookworm AS source
 ARG GPTR_VERSION
 RUN apt-get update \
@@ -19,6 +24,7 @@ RUN apt-get update \
 RUN git clone --depth 1 --branch "${GPTR_VERSION}" https://github.com/assafelovic/gpt-researcher.git /src
 
 # Stage 1: Browser and build tools installation
+# Same Python line as the source stage; see the note above.
 FROM python:3.13-slim-bookworm AS install-browser
 
 RUN apt-get update \

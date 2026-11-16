@@ -74,20 +74,6 @@
     },
     {
       "customType": "regex",
-      "description": "Update gpt-researcher version",
-      "managerFilePatterns": [
-        "/^specs/gpt-researcher.yml$/"
-      ],
-      "matchStrings": [
-        "ref: (?<currentValue>v\\d+\\.\\d+\\.\\d+)",
-        "imageTags: (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "assafelovic/gpt-researcher",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "loose"
-    },
-    {
-      "customType": "regex",
       "description": "Update Moyai commit hash from API for ref",
       "managerFilePatterns": [
         "/^specs/moyai\\.yml$/"
@@ -224,6 +210,19 @@
       "description": "mem0 v2.2.1 pins pydantic==2.10.4 -> pydantic-core 2.27.2 (pyo3 0.22), which has no Python 3.14/3.15 wheels and cannot compile on newer interpreters; hold the 3.13 line until mem0 relaxes the pin.",
       "matchFileNames": [
         "images/mem0-api/Dockerfile"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "python"
+      ],
+      "allowedVersions": "/^3\\.13/"
+    },
+    {
+      "description": "gpt-researcher is held to the Python 3.13 line: unstructured >=0.24.1 (the fix for GHSA-4mvj-m6j5-pmf7) declares requires-python <3.14. Keep in sync with the Dockerfile pin; revisit when unstructured supports 3.14+ or the app stops using it.",
+      "matchFileNames": [
+        "images/gpt-researcher/Dockerfile"
       ],
       "matchDatasources": [
         "docker"
