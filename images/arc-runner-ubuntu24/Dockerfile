@@ -13,7 +13,7 @@ ARG RUNNER_VERSION=2.338.2
 # packageName=actions/runner-container-hooks
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 # renovate: packageName=docker/cli datasource=github-tags
-ARG DOCKER_VERSION=29.9.3
+ARG DOCKER_VERSION=29.10.0
 # renovate: packageName=docker/buildx
 ARG BUILDX_VERSION=0.39.1
 
