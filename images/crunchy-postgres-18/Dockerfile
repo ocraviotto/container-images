@@ -1,5 +1,6 @@
 ARG BASE_POSTGRES_VERSION=18
-ARG PGO_IMAGE_VERSION=ubi9-18.6-2633
+# renovate: packageName=image-crunchy-postgres-18 datasource=custom.crunchyPostgres
+ARG PGO_IMAGE_VERSION=ubi9-18.7-2647
 ARG REGISTRY=registry.developers.crunchydata.com/crunchydata/crunchy-postgres
 
 FROM docker.io/library/postgres:${BASE_POSTGRES_VERSION} AS builder
