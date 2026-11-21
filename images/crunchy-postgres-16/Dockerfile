@@ -14,18 +14,20 @@ FROM ${REGISTRY}:${PGO_IMAGE_VERSION}
 
 USER root
 
-# The stable Crunchy image is built on a UBI 9 base whose packages lag the
-# published Red Hat errata. Apply the updates here so the runtime does not
-# ship the fixable HIGH/CRITICAL findings reported by the image scan. The
-# Crunchy and PGDG repositories are excluded so the Postgres packages stay
-# at the versions the operator was tested with.
-RUN dnf -y update \
-        --disablerepo='crunchypg*' \
-        --disablerepo='pgdg*' \
-    && dnf clean all
+# The runtime is a UBI 9 minimal image with microdnf, not dnf. Apply the
+# published errata for the packages reported by the image scan. Only the
+# affected base packages are named so the Crunchy Postgres packages stay at
+# the versions the operator was tested with.
+RUN microdnf -y update \
+        bind-libs bind-license bind-utils ca-certificates curl-minimal expat \
+        krb5-libs krb5-pkinit krb5-workstation libblkid libcurl-minimal \
+        libevent libfdisk libkadm5 libmount libsmartcols libuuid libxml2 \
+        openssl openssl-libs pcre2 pcre2-syntax perl-DBI python3 python3-libs \
+        python3.12 python3.12-libs sqlite-libs util-linux util-linux-core \
+    && microdnf clean all
 
-# Patroni and its dependencies are pip-installed under /usr/local and are
-# not covered by the RPM update above.
+# Patroni's dependencies are pip-installed under /usr/local and are not
+# covered by the RPM update above.
 RUN pip3 install --no-cache-dir --upgrade \
         'certifi==2026.10.18' \
         'urllib3==2.8.0'
