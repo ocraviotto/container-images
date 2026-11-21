@@ -26,9 +26,15 @@ RUN microdnf -y update \
         python3.12 python3.12-libs sqlite-libs util-linux util-linux-core \
     && microdnf clean all
 
-# Patroni's dependencies are pip-installed under /usr/local and are not
-# covered by the RPM update above.
-RUN pip3 install --no-cache-dir --upgrade \
+# Patroni's dependencies are pip-installed under /usr/local, but that bin
+# directory is not on the image's PATH. Call pip by absolute path.
+RUN set -eux; \
+    if [ -x /usr/local/bin/pip3 ]; then PIP=/usr/local/bin/pip3; \
+    elif [ -x /usr/local/bin/pip3.12 ]; then PIP=/usr/local/bin/pip3.12; \
+    elif [ -x /usr/local/bin/python3.12 ]; then PIP="/usr/local/bin/python3.12 -m pip"; \
+    else ls -l /usr/local/bin; exit 1; \
+    fi; \
+    $PIP install --no-cache-dir --upgrade \
         'certifi==2026.10.18' \
         'urllib3==2.8.0'
 
