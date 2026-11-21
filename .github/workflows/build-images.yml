@@ -433,7 +433,10 @@ jobs:
           context: ${{ matrix.build_context }}
           file: ${{ matrix.dockerfile_path }}
           push: ${{ needs.images-to-build.outputs.should_push == 'true' }}
-          platforms: ${{ matrix.platforms }}
+          # Only publish multi-arch from trusted refs. PR checks build the
+          # amd64 image already (for scanning); rebuilding arm64 under QEMU
+          # adds over an hour to heavy images such as ente-web.
+          platforms: ${{ needs.images-to-build.outputs.should_push == 'true' && matrix.platforms || 'linux/amd64' }}
           tags: ${{ join(matrix.image_tags, ',') }}
           build-args: ${{ matrix.build_args && join(matrix.build_args, '\n') || '' }}
           labels: ${{ steps.meta.outputs.labels }}
