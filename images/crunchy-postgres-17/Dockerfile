@@ -17,7 +17,7 @@ FROM ${REGISTRY}:${PGO_IMAGE_VERSION}
 USER root
 
 # The runtime is a UBI 9 minimal image with microdnf, not dnf. Apply the
-# published errata for the packages reported by the image scan. Only the
+# published errata for the packages reported by the scanners. Only the
 # affected base packages are named so the Crunchy Postgres packages stay at
 # the versions the operator was tested with.
 RUN microdnf -y update \
@@ -26,6 +26,7 @@ RUN microdnf -y update \
         libevent libfdisk libkadm5 libmount libsmartcols libuuid libxml2 \
         openssl openssl-libs pcre2 pcre2-syntax perl-DBI python3 python3-libs \
         python3.12 python3.12-libs sqlite-libs util-linux util-linux-core \
+        vim-minimal \
     && microdnf clean all
 
 # Patroni's modules live in /usr/local/lib/python3.12 and are loaded by the
