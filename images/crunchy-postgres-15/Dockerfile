@@ -5,7 +5,9 @@ ARG REGISTRY=registry.developers.crunchydata.com/crunchydata/crunchy-postgres
 
 FROM docker.io/library/postgres:${BASE_POSTGRES_VERSION} AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends make git postgresql-server-dev-15 \
+# ca-certificates is explicit because --no-install-recommends drops git's
+# recommendation of it, which breaks the HTTPS clone below.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates make git postgresql-server-dev-15 \
     && git clone https://github.com/michelp/pgjwt.git \
     && cd pgjwt \
     && make && make install
