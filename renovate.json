@@ -13,7 +13,7 @@
         "images/**/Dockerfile"
       ],
       "matchStrings": [
-        "# renovate:(?: packageName=(?<packageName>\\S+?))(?: depName=(?<depName>\\S+?))?(?: datasource=(?<datasource>\\S+))?(?: versioning=(?<versioning>[a-z-]+?))?\\nARG\\s\\S+_VERSION=(?<currentValue>\\S+)"
+        "# renovate:(?: packageName=(?<packageName>\\S+?))(?: depName=(?<depName>\\S+?))?(?: datasource=(?<datasource>\\S+?))?(?: versioning=(?<versioning>[a-z-]+?))?\\nARG\\s\\S+_VERSION=(?<currentValue>\\S+)"
       ],
       "datasourceTemplate": "github-releases"
     },
@@ -155,7 +155,10 @@
       ]
     },
     "crunchyPostgres": {
-      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/CrunchyData/postgres-operator/main/config/components/images-by-tag/kustomization.yaml",
+      // Track a GA release, not main: main can advertise installer tags for
+      // pre-release images that are not published yet (for example the
+      // v6.0.4 images). Bump this ref when the next GA release ships.
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/CrunchyData/postgres-operator/v6.0.3/config/components/images-by-tag/kustomization.yaml",
       "format": "yaml",
       "transformTemplates": [
         "{\"releases\":[{\"version\": images[name = \"{{packageName}}\"].newTag}]}"
