@@ -97,3 +97,15 @@ ignore:
   # actions/runner 2.338.2's bundled .NET runtime; see .trivyignore.
   - vulnerability: CVE-2026-114149
   - vulnerability: GHSA-x33c-w48q-qrgc
+  # actions/runner 2.338.2 is the current upstream release and bundles
+  # Node.js 20.20.2 and 24.22.1, both predating these fixes. There is no
+  # newer runner release, and Node 20 requires moving to 22.23.5, so the
+  # bundled binaries cannot be updated independently. Remove when
+  # actions/runner refreshes its Node bundle.
+  - vulnerability: CVE-2026-123863
+  - vulnerability: CVE-2026-123864
+  - vulnerability: CVE-2026-123865
+  - vulnerability: CVE-2026-123866
+  - vulnerability: CVE-2026-123872
+  - vulnerability: CVE-2026-123874
+  - vulnerability: CVE-2026-126051
