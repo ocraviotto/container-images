@@ -1,4 +1,4 @@
-ARG BASE_POSTGRES_VERSION=18
+ARG BASE_POSTGRES_VERSION=19
 # renovate: packageName=image-crunchy-postgres-18 datasource=custom.crunchyPostgres
 ARG PGO_IMAGE_VERSION=ubi9-18.6-2633
 ARG REGISTRY=registry.developers.crunchydata.com/crunchydata/crunchy-postgres
