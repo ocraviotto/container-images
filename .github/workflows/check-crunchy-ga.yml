@@ -1,0 +1,53 @@
+name: Check crunchy-postgres GA release
+
+on:
+  schedule:
+    # Mondays at 07:30 UTC
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Compare the pinned operator release with the latest GA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pinned=$(
+            grep -oE 'postgres-operator/[^/]+/config/components/images-by-tag/kustomization\.yaml' renovate.json \
+              | sed -E 's#postgres-operator/([^/]+)/.*#\1#' \
+              | head -n1
+          )
+          if [[ -z "${pinned}" ]]; then
+            echo "Could not find the crunchyPostgres datasource pin in renovate.json" >&2
+            exit 1
+          fi
+
+          latest=$(gh api repos/CrunchyData/postgres-operator/releases/latest --jq '.tag_name')
+          echo "pinned=${pinned} latest_ga=${latest}"
+
+          if [[ "${pinned}" == "${latest}" ]]; then
+            echo "Already pinned to the latest GA release"
+            exit 0
+          fi
+
+          open=$(gh issue list --state open --search 'crunchy-postgres datasource in:title' --json number --jq 'length')
+          if [[ "${open}" -gt 0 ]]; then
+            echo "An open issue already tracks a crunchy-postgres datasource update"
+            exit 0
+          fi
+
+          title="chore(renovate): bump crunchy-postgres datasource to ${latest}"
+          printf 'The `crunchyPostgres` datasource in `renovate.json` is pinned to `%s`, but the latest GA release of CrunchyData/postgres-operator is `%s`.\n\nBump the ref in the datasource URL from .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml to .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml. Renovate will then propose the image tag updates from that release.\n' "${pinned}" "${latest}" "${pinned}" "${latest}" > /tmp/issue-body.md
+          gh issue create --title "${title}" --body-file /tmp/issue-body.md
+
