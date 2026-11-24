@@ -32,7 +32,7 @@ COPY --from=source /src/docs-site/public/demo/index.html /src/docs-site/public/d
 RUN node prepare-demo.mjs . \
     && npm install --omit=dev --ignore-scripts --no-audit --no-fund
 
-FROM nginx/nginx-unprivileged:1.31.8-alpine-slim
+FROM nginx/nginx-unprivileged:1.31.9-alpine-slim
 COPY --from=assets /assets/index.html /usr/share/nginx/html/index.html
 COPY --from=assets /assets/script.js /usr/share/nginx/html/script.js
 COPY --from=assets /assets/node_modules/@xberg-io/html-to-markdown-wasm/pkg/web/html_to_markdown_wasm.js /usr/share/nginx/html/
@@ -48,10 +48,11 @@ COPY --from=assets /assets/node_modules/@fontsource-variable/sora/LICENSE /usr/s
 COPY --from=assets /assets/node_modules/@fontsource-variable/exo-2/LICENSE /usr/share/nginx/html/fonts/OFL-Exo-2.txt
 COPY --from=assets /assets/node_modules/@fontsource/jetbrains-mono/LICENSE /usr/share/nginx/html/fonts/OFL-JetBrains-Mono.txt
 
-# The nginx base image can predate Alpine's zlib 1.4-r0 security update
-# (CVE-2026-4738). Pull the fixed package in explicitly.
+# The nginx base image can predate Alpine's security updates: zlib 1.4-r0
+# (CVE-2026-4738) and OpenSSL 3.5.9-r1 (CVE-2026-95691, CVE-2026-95692,
+# CVE-2026-107496, CVE-2026-88823). Pull the fixed packages in explicitly.
 USER root
-RUN apk upgrade --no-cache zlib
+RUN apk upgrade --no-cache zlib libcrypto3 libssl3
 
 # The base image already runs as an unprivileged user; make it explicit so
 # Dockerfile config scans can see the runtime user.
