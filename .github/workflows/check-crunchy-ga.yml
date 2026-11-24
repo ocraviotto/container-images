@@ -1,3 +1,8 @@
+# The crunchyPostgres datasource in renovate.json intentionally tracks a GA
+# release instead of postgres-operator main, because main advertises image
+# tags for prereleases that the registry does not serve yet. This job looks at
+# the newest v6 tag's image list and reports it only once every image it
+# references is pullable from the registry.
 name: Check crunchy-postgres GA release
 
 on:
@@ -10,6 +15,10 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: check-crunchy-ga
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -17,37 +26,128 @@ jobs:
       - name: Checkout current repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Compare the pinned operator release with the latest GA
+      - name: Compare the pinned operator release with the newest published one
         env:
           GH_TOKEN: ${{ github.token }}
+          REGISTRY: https://registry.developers.crunchydata.com
         run: |
           set -euo pipefail
 
           pinned=$(
             grep -oE 'postgres-operator/[^/]+/config/components/images-by-tag/kustomization\.yaml' renovate.json \
               | sed -E 's#postgres-operator/([^/]+)/.*#\1#' \
-              | head -n1
+              | head -n1 || true
           )
           if [[ -z "${pinned}" ]]; then
-            echo "Could not find the crunchyPostgres datasource pin in renovate.json" >&2
+            echo "::error::Could not find the crunchyPostgres datasource pin in renovate.json"
+            exit 1
+          fi
+          if ! [[ "${pinned}" =~ ^v6\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The crunchyPostgres datasource pin '${pinned}' is not a v6 release tag"
             exit 1
           fi
 
-          latest=$(gh api repos/CrunchyData/postgres-operator/releases/latest --jq '.tag_name')
-          echo "pinned=${pinned} latest_ga=${latest}"
+          latest=$(
+            gh api --paginate repos/CrunchyData/postgres-operator/tags --jq '.[].name' \
+              | grep -E '^v6\.[0-9]+\.[0-9]+$' \
+              | sort -V \
+              | tail -n1 || true
+          )
+          if [[ -z "${latest}" ]]; then
+            echo "::error::No v6 release tags found in CrunchyData/postgres-operator"
+            exit 1
+          fi
+          echo "pinned=${pinned} newest_tag=${latest}"
 
           if [[ "${pinned}" == "${latest}" ]]; then
-            echo "Already pinned to the latest GA release"
+            echo "Already pinned to the newest v6 tag"
+            exit 0
+          fi
+          if [[ "$(printf '%s\n%s\n' "${pinned}" "${latest}" | sort -V | tail -n1)" != "${latest}" ]]; then
+            echo "Pinned ${pinned} is newer than the newest v6 tag ${latest}; nothing to do"
             exit 0
           fi
 
-          open=$(gh issue list --state open --search 'crunchy-postgres datasource in:title' --json number --jq 'length')
-          if [[ "${open}" -gt 0 ]]; then
-            echo "An open issue already tracks a crunchy-postgres datasource update"
+          # Read the image list from the tag, not from main: main can carry
+          # tags for images that have not been published.
+          if ! manifest=$(
+            gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/CrunchyData/postgres-operator/contents/config/components/images-by-tag/kustomization.yaml?ref=${latest}"
+          ); then
+            echo "::error::Could not read the image list at ${latest}"
+            exit 1
+          fi
+
+          image_tag() {
+            awk -v name="$1" '
+              $1 == "-" && $2 == "name:" && $3 == name { found = 1; next }
+              found && $1 == "newTag:" { print $2; exit }
+            ' <<< "${manifest}"
+          }
+
+          # The registry serves manifests anonymously; do not report a release
+          # until every image the tag references can actually be pulled.
+          manifest_status() {
+            curl -sS -o /dev/null -w '%{http_code}' \
+              -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json' \
+              "${REGISTRY}/v2/crunchydata/crunchy-postgres/manifests/$1"
+          }
+
+          majors=()
+          for dir in images/crunchy-postgres-[0-9]*; do
+            [[ -d "${dir}" ]] || continue
+            major="${dir#images/crunchy-postgres-}"
+            if [[ "${major}" =~ ^[0-9]+$ ]]; then
+              majors+=("${major}")
+            fi
+          done
+          if (( ${#majors[@]} == 0 )); then
+            echo "::error::Could not find any images/crunchy-postgres-* directories"
+            exit 1
+          fi
+
+          unpublished=()
+          for major in "${majors[@]}"; do
+            name="image-crunchy-postgres-${major}"
+            tag=$(image_tag "${name}")
+            if [[ -z "${tag}" ]]; then
+              echo "::error::${latest} has no ${name} entry"
+              exit 1
+            fi
+            status=$(manifest_status "${tag}")
+            echo "${name}: ${tag} -> ${status}"
+            case "${status}" in
+              200) ;;
+              404) unpublished+=("${name}: ${tag}") ;;
+              *)
+                echo "::error::Unexpected HTTP ${status} for ${tag}"
+                exit 1
+                ;;
+            esac
+          done
+
+          if (( ${#unpublished[@]} > 0 )); then
+            printf 'Not published yet for %s: %s\n' "${latest}" "${unpublished[*]}"
             exit 0
           fi
 
           title="chore(renovate): bump crunchy-postgres datasource to ${latest}"
-          printf 'The `crunchyPostgres` datasource in `renovate.json` is pinned to `%s`, but the latest GA release of CrunchyData/postgres-operator is `%s`.\n\nBump the ref in the datasource URL from .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml to .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml. Renovate will then propose the image tag updates from that release.\n' "${pinned}" "${latest}" "${pinned}" "${latest}" > /tmp/issue-body.md
-          gh issue create --title "${title}" --body-file /tmp/issue-body.md
+          printf 'The `crunchyPostgres` datasource in `renovate.json` is pinned to `%s`.\n\nCrunchyData/postgres-operator has tagged `%s`, and every crunchy-postgres image it references is now published.\n\nBump the ref in the datasource URL from .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml to .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml. Renovate will then propose the image tag updates from that release.\n' "${pinned}" "${latest}" "${pinned}" "${latest}" > /tmp/issue-body.md
 
+          issue=$(
+            gh issue list --state all \
+              --search '"crunchy-postgres datasource" in:title' \
+              --json number,state \
+              --jq '.[0] // empty | "\(.number) \(.state)"'
+          )
+          if [[ -n "${issue}" ]]; then
+            number="${issue%% *}"
+            state="${issue##* }"
+            gh issue edit "${number}" --title "${title}" --body-file /tmp/issue-body.md
+            if [[ "${state}" != "OPEN" ]]; then
+              gh issue reopen "${number}"
+            fi
+            echo "Updated issue #${number} for ${latest}"
+          else
+            gh issue create --title "${title}" --body-file /tmp/issue-body.md
+          fi
