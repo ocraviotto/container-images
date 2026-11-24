@@ -20,10 +20,19 @@ builds:
     # v0.62.0 (CVE-2026-78661 fixed in v0.62.0).
     image_ignore:
       - CVE-2026-78661
-    # Upstream runtime uses alpine:3.22, whose zlib package is still vulnerable.
-    # Remove when ente updates the runtime base or zlib package.
+    # Upstream runtime hard-codes alpine:3.22, whose zlib (CVE-2026-4738) and
+    # OpenSSL (CVE-2026-95691, CVE-2026-95692, CVE-2026-107496, CVE-2026-88823)
+    # packages predate Alpine's fixes (OpenSSL 3.5.9-r1). An external
+    # Dockerfile's runtime stage cannot be pinned or patched from this repo;
+    # the museum binary is static (CGO_ENABLED=0) and does not load these
+    # libraries itself. Remove these when upstream rebuilds the runtime stage
+    # on a newer Alpine base.
     grype_ignore:
       - CVE-2026-4738
+      - CVE-2026-95691
+      - CVE-2026-95692
+      - CVE-2026-107496
+      - CVE-2026-88823
   - name: ente-web
     dockerfile: web/Dockerfile
     imageTags: DATE,REF # DATE and REF get replace by 0.0.[date]-[build] and REF by the closest ref value
