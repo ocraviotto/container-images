@@ -32,7 +32,7 @@ COPY --from=source /src/docs-site/public/demo/index.html /src/docs-site/public/d
 RUN node prepare-demo.mjs . \
     && npm install --omit=dev --ignore-scripts --no-audit --no-fund
 
-FROM nginx/nginx-unprivileged:1.31.9-alpine-slim
+FROM nginx/nginx-unprivileged:1.31.10-alpine-slim
 COPY --from=assets /assets/index.html /usr/share/nginx/html/index.html
 COPY --from=assets /assets/script.js /usr/share/nginx/html/script.js
 COPY --from=assets /assets/node_modules/@xberg-io/html-to-markdown-wasm/pkg/web/html_to_markdown_wasm.js /usr/share/nginx/html/
