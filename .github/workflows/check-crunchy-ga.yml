@@ -1,8 +1,8 @@
 # The crunchyPostgres datasource in renovate.json intentionally tracks a GA
 # release instead of postgres-operator main, because main advertises image
-# tags for prereleases that the registry does not serve yet. This job looks at
-# the newest v6 tag's image list and reports it only once every image it
-# references is pullable from the registry.
+# tags for prereleases that the registry does not serve yet. This job walks
+# the v6 tags newest-first and reports the newest one whose images are all
+# pullable from the registry.
 name: Check crunchy-postgres GA release
 
 on:
@@ -26,12 +26,20 @@ jobs:
       - name: Checkout current repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Compare the pinned operator release with the newest published one
+      - name: Report the newest crunchy-postgres release with published images
         env:
           GH_TOKEN: ${{ github.token }}
           REGISTRY: https://registry.developers.crunchydata.com
         run: |
           set -euo pipefail
+
+          close_tracker_issues() {
+            gh issue list --state open \
+              --search '"crunchy-postgres datasource" in:title' \
+              --json number --jq '.[].number' \
+              | xargs -r -n1 gh issue close --reason completed \
+                  --comment "renovate.json is pinned to ${pinned}, the newest published crunchy-postgres release."
+          }
 
           pinned=$(
             grep -oE 'postgres-operator/[^/]+/config/components/images-by-tag/kustomization\.yaml' renovate.json \
@@ -47,51 +55,15 @@ jobs:
             exit 1
           fi
 
-          latest=$(
-            gh api --paginate repos/CrunchyData/postgres-operator/tags --jq '.[].name' \
-              | grep -E '^v6\.[0-9]+\.[0-9]+$' \
-              | sort -V \
-              | tail -n1 || true
-          )
-          if [[ -z "${latest}" ]]; then
+          if ! all_tags=$(gh api --paginate repos/CrunchyData/postgres-operator/tags --jq '.[].name'); then
+            echo "::error::Could not list CrunchyData/postgres-operator tags"
+            exit 1
+          fi
+          tags=$(grep -E '^v6\.[0-9]+\.[0-9]+$' <<< "${all_tags}" | sort -V -r || true)
+          if [[ -z "${tags}" ]]; then
             echo "::error::No v6 release tags found in CrunchyData/postgres-operator"
             exit 1
           fi
-          echo "pinned=${pinned} newest_tag=${latest}"
-
-          if [[ "${pinned}" == "${latest}" ]]; then
-            echo "Already pinned to the newest v6 tag"
-            exit 0
-          fi
-          if [[ "$(printf '%s\n%s\n' "${pinned}" "${latest}" | sort -V | tail -n1)" != "${latest}" ]]; then
-            echo "Pinned ${pinned} is newer than the newest v6 tag ${latest}; nothing to do"
-            exit 0
-          fi
-
-          # Read the image list from the tag, not from main: main can carry
-          # tags for images that have not been published.
-          if ! manifest=$(
-            gh api -H 'Accept: application/vnd.github.raw' \
-              "repos/CrunchyData/postgres-operator/contents/config/components/images-by-tag/kustomization.yaml?ref=${latest}"
-          ); then
-            echo "::error::Could not read the image list at ${latest}"
-            exit 1
-          fi
-
-          image_tag() {
-            awk -v name="$1" '
-              $1 == "-" && $2 == "name:" && $3 == name { found = 1; next }
-              found && $1 == "newTag:" { print $2; exit }
-            ' <<< "${manifest}"
-          }
-
-          # The registry serves manifests anonymously; do not report a release
-          # until every image the tag references can actually be pulled.
-          manifest_status() {
-            curl -sS -o /dev/null -w '%{http_code}' \
-              -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json' \
-              "${REGISTRY}/v2/crunchydata/crunchy-postgres/manifests/$1"
-          }
 
           majors=()
           for dir in images/crunchy-postgres-[0-9]*; do
@@ -106,33 +78,105 @@ jobs:
             exit 1
           fi
 
-          unpublished=()
-          for major in "${majors[@]}"; do
-            name="image-crunchy-postgres-${major}"
-            tag=$(image_tag "${name}")
-            if [[ -z "${tag}" ]]; then
-              echo "::error::${latest} has no ${name} entry"
+          image_tag() {
+            awk -v name="$1" '
+              $1 == "-" && $2 == "name:" && $3 == name { found = 1; next }
+              found && $1 == "newTag:" { print $2; exit }
+            ' <<< "$2"
+          }
+
+          # The registry answers the first request with a bearer challenge;
+          # exchange it for a short-lived pull token, as docker itself does.
+          registry_token() {
+            local challenge realm service scope
+            challenge=$(curl -sSI --retry 3 --retry-all-errors --max-time 20 \
+              -H 'Accept: application/vnd.oci.image.index.v1+json' \
+              "${REGISTRY}/v2/crunchydata/crunchy-postgres/manifests/$1" \
+              | tr -d '\r' \
+              | sed -nE 's/^www-authenticate: Bearer (.*)$/\1/ip')
+            if [[ -z "${challenge}" ]]; then
+              return 1
+            fi
+            realm=$(sed -nE 's/.*realm="([^"]+)".*/\1/p' <<< "${challenge}")
+            service=$(sed -nE 's/.*service="([^"]+)".*/\1/p' <<< "${challenge}")
+            scope=$(sed -nE 's/.*scope="([^"]+)".*/\1/p' <<< "${challenge}")
+            curl -fsS --retry 3 --retry-all-errors --max-time 20 \
+              "${realm}?service=${service}&scope=${scope}" \
+              | sed -E 's/.*"token":"([^"]+)".*/\1/'
+          }
+
+          manifest_status() {
+            local auth=()
+            if [[ -n "${TOKEN}" ]]; then
+              auth=(-H "Authorization: Bearer ${TOKEN}")
+            fi
+            curl -sS -o /dev/null -w '%{http_code}' \
+              --retry 3 --retry-all-errors --max-time 20 \
+              "${auth[@]}" \
+              -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json' \
+              "${REGISTRY}/v2/crunchydata/crunchy-postgres/manifests/$1"
+          }
+
+          TOKEN=""
+          token_fetched=false
+          published=""
+
+          while IFS= read -r tag; do
+            if [[ "${tag}" == "${pinned}" ]]; then
+              continue
+            fi
+            if [[ "$(printf '%s\n%s\n' "${pinned}" "${tag}" | sort -V | tail -n1)" != "${tag}" ]]; then
+              break
+            fi
+
+            if [[ "${token_fetched}" != "true" ]]; then
+              TOKEN=$(registry_token "${tag}" || true)
+              token_fetched=true
+            fi
+
+            if ! manifest=$(
+              gh api -H 'Accept: application/vnd.github.raw' \
+                "repos/CrunchyData/postgres-operator/contents/config/components/images-by-tag/kustomization.yaml?ref=${tag}"
+            ); then
+              echo "::error::Could not read the image list at ${tag}"
               exit 1
             fi
-            status=$(manifest_status "${tag}")
-            echo "${name}: ${tag} -> ${status}"
-            case "${status}" in
-              200) ;;
-              404) unpublished+=("${name}: ${tag}") ;;
-              *)
-                echo "::error::Unexpected HTTP ${status} for ${tag}"
-                exit 1
-                ;;
-            esac
-          done
 
-          if (( ${#unpublished[@]} > 0 )); then
-            printf 'Not published yet for %s: %s\n' "${latest}" "${unpublished[*]}"
+            all_published=true
+            for major in "${majors[@]}"; do
+              name="image-crunchy-postgres-${major}"
+              image=$(image_tag "${name}" "${manifest}")
+              if [[ -z "${image}" ]]; then
+                echo "::error::${tag} has no ${name} entry"
+                exit 1
+              fi
+              status=$(manifest_status "${image}")
+              echo "${tag}: ${name} -> ${image} (${status})"
+              if [[ "${status}" == "200" ]]; then
+                continue
+              fi
+              if [[ "${status}" != "404" ]]; then
+                echo "::error::Unexpected HTTP ${status} for ${image}"
+                exit 1
+              fi
+              all_published=false
+              break
+            done
+
+            if [[ "${all_published}" == "true" ]]; then
+              published="${tag}"
+              break
+            fi
+          done <<< "${tags}"
+
+          if [[ -z "${published}" ]]; then
+            echo "No published release newer than ${pinned}; nothing to do"
+            close_tracker_issues
             exit 0
           fi
 
-          title="chore(renovate): bump crunchy-postgres datasource to ${latest}"
-          printf 'The `crunchyPostgres` datasource in `renovate.json` is pinned to `%s`.\n\nCrunchyData/postgres-operator has tagged `%s`, and every crunchy-postgres image it references is now published.\n\nBump the ref in the datasource URL from .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml to .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml. Renovate will then propose the image tag updates from that release.\n' "${pinned}" "${latest}" "${pinned}" "${latest}" > /tmp/issue-body.md
+          title="chore(renovate): bump crunchy-postgres datasource to ${published}"
+          printf 'The `crunchyPostgres` datasource in `renovate.json` is pinned to `%s`.\n\nCrunchyData/postgres-operator has tagged `%s`, and every crunchy-postgres image it references is published.\n\nBump the ref in the datasource URL from .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml to .../postgres-operator/%s/config/components/images-by-tag/kustomization.yaml. Renovate will then propose the image tag updates from that release.\n' "${pinned}" "${published}" "${pinned}" "${published}" > /tmp/issue-body.md
 
           issue=$(
             gh issue list --state all \
@@ -147,7 +191,7 @@ jobs:
             if [[ "${state}" != "OPEN" ]]; then
               gh issue reopen "${number}"
             fi
-            echo "Updated issue #${number} for ${latest}"
+            echo "Updated issue #${number} for ${published}"
           else
             gh issue create --title "${title}" --body-file /tmp/issue-body.md
           fi
