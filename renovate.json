@@ -142,9 +142,9 @@
     },
     "crunchyPostgres": {
       // Track a GA release, not main: main can advertise installer tags for
-      // pre-release images that are not published yet (for example the
-      // v6.0.4 images). Bump this ref when the next GA release ships.
-      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/CrunchyData/postgres-operator/v6.0.3/config/components/images-by-tag/kustomization.yaml",
+      // pre-release images that are not published yet. Bump this ref when the
+      // next GA release ships.
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/CrunchyData/postgres-operator/v6.0.4/config/components/images-by-tag/kustomization.yaml",
       "format": "yaml",
       "transformTemplates": [
         "{\"releases\":[{\"version\": images[name = \"{{packageName}}\"].newTag}]}"
