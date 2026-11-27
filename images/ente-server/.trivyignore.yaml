@@ -1,0 +1,6 @@
+# Museum writes its log file to the /var bind mount in the production
+# deployment, so the runtime stays root like the upstream image. Everything
+# this image executes is the static museum binary.
+misconfigurations:
+  - id: AVD-DS-0002
+  - id: DS-0002

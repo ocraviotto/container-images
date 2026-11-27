@@ -1,0 +1,1 @@
+# Frees the runner's preinstalled toolchains before the Rust/Next.js build.
