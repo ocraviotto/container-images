@@ -10,6 +10,7 @@ RUN git init -q \
     && git remote add origin https://github.com/ente-io/ente.git \
     && git fetch -q --depth 1 origin "${ENTE_SERVER_COMMIT}" \
     && git checkout -q FETCH_HEAD
+WORKDIR /etc/ente/server
 RUN go mod download
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -o museum cmd/museum/main.go
@@ -21,9 +22,9 @@ USER root
 # The runtime base lags Alpine's package errata (OpenSSL, zlib, ...). Apply
 # the updates at build time so the image does not ship stale libraries.
 RUN apk upgrade --no-cache
-COPY --from=builder /etc/ente/museum /museum
-COPY --from=builder /etc/ente/configurations /configurations
-COPY --from=builder /etc/ente/migrations /migrations
-COPY --from=builder /etc/ente/mail-templates /mail-templates
-COPY --from=builder /etc/ente/web-templates /web-templates
+COPY --from=builder /etc/ente/server/museum /museum
+COPY --from=builder /etc/ente/server/configurations /configurations
+COPY --from=builder /etc/ente/server/migrations /migrations
+COPY --from=builder /etc/ente/server/mail-templates /mail-templates
+COPY --from=builder /etc/ente/server/web-templates /web-templates
 CMD ["./museum"]
