@@ -11,6 +11,8 @@ RUN git init -q \
     && git fetch -q --depth 1 origin "${ENTE_SERVER_COMMIT}" \
     && git checkout -q FETCH_HEAD
 WORKDIR /etc/ente/server
+# Upstream pins golang.org/x/net v0.60.0; CVE-2026-78661 is fixed in v0.62.0.
+RUN go get golang.org/x/net@v0.62.0
 RUN go mod download
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -o museum cmd/museum/main.go
