@@ -26,7 +26,7 @@ RUN apk upgrade --no-cache
 # The deployment chart runs the pod as 568:568 (runAsNonRoot, fsGroup 568);
 # mirror that in the image so it is non-root without relying on the override.
 RUN addgroup -S -g 568 museum \
-    && adduser -S -D -H -u 568 -G museum museum
+    && adduser -S -D -u 568 -G museum museum
 COPY --from=builder /etc/ente/server/museum /museum
 COPY --from=builder /etc/ente/server/configurations /configurations
 COPY --from=builder /etc/ente/server/migrations /migrations
