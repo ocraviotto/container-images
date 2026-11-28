@@ -20,13 +20,17 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM alpine:3.22
 ARG ENTE_SERVER_COMMIT
 ENV GIT_COMMIT=$ENTE_SERVER_COMMIT
-USER root
 # The runtime base lags Alpine's package errata (OpenSSL, zlib, ...). Apply
 # the updates at build time so the image does not ship stale libraries.
 RUN apk upgrade --no-cache
+# The deployment chart runs the pod as 568:568 (runAsNonRoot, fsGroup 568);
+# mirror that in the image so it is non-root without relying on the override.
+RUN addgroup -S -g 568 museum \
+    && adduser -S -D -H -u 568 -G museum museum
 COPY --from=builder /etc/ente/server/museum /museum
 COPY --from=builder /etc/ente/server/configurations /configurations
 COPY --from=builder /etc/ente/server/migrations /migrations
 COPY --from=builder /etc/ente/server/mail-templates /mail-templates
 COPY --from=builder /etc/ente/server/web-templates /web-templates
+USER 568:568
 CMD ["./museum"]
